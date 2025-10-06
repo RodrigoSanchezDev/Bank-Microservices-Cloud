@@ -2,23 +2,12 @@
 
 > Sistema bancario distribuido de alto rendimiento construido con arquitectura de microservicios
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-- ✅ Arquitectura de Microservicios
-
-- ✅ Config Server (Centralizado)
-- ✅ Eureka Discovery Service
-- ✅ Account Service (CRUD + CSV Migration)
-- ✅ Customer Service (Gestión de Clientes)
-- ✅ Transaction Service (Gestión de Transacciones)
-- ✅ Patrones de Resiliencia (Resilience4j)
-- ✅ Autenticación JWT
-- ✅ Contenedorización Docker
-- ✅ Spring Boot 3.5.0
-- ✅ Spring Cloud 2024.0.0
-- ✅ Java 21pring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
-  [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-  [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-  [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-  [![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
 
 ---
 
