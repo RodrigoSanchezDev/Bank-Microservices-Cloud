@@ -94,9 +94,9 @@ public class JwtUtil {
 
 ### 📸 EVIDENCIA 1: Código del Generador JWT
 
-> **INSTRUCCIÓN:** Abre el archivo `api-gateway-bff/src/main/java/com/duoc/bank/bff/security/JwtUtil.java` en VS Code y captura la clase completa mostrando los métodos `generateToken()` y `validateToken()`.
->
-> **Guardar como:** `evidencias/evidencia_1_oauth_jwt_util.png`
+![Evidencia 1: JwtUtil.java](evidencias/evidencia_1_oauth_jwt_util.png)
+
+_Clase JwtUtil.java mostrando los métodos generateToken() y validateToken() con firma HMAC-SHA256_
 
 ---
 
@@ -145,9 +145,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
 ### 📸 EVIDENCIA 2: Código del Filtro de Autenticación
 
-> **INSTRUCCIÓN:** Abre `api-gateway-bff/src/main/java/com/duoc/bank/bff/filter/JwtAuthenticationFilter.java` y captura el método `filter()` completo.
->
-> **Guardar como:** `evidencias/evidencia_2_oauth_filter.png`
+![Evidencia 2: JwtAuthenticationFilter.java](evidencias/evidencia_2_oauth_filter.png)
+
+_Filtro de autenticación JWT mostrando validación de tokens y exclusión de rutas públicas_
 
 ---
 
@@ -219,9 +219,9 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 
 ### 📸 EVIDENCIA 3: Dockerfile de Customer Service
 
-> **INSTRUCCIÓN:** Abre `customer-service/Dockerfile` y captura el contenido completo.
->
-> **Guardar como:** `evidencias/evidencia_3_dockerfile.png`
+![Evidencia 3: Dockerfile](evidencias/evidencia_3_dockerfile.png)
+
+_Dockerfile mostrando imagen Alpine Linux optimizada con JRE 21_
 
 ---
 
@@ -249,9 +249,9 @@ mvn clean package -DskipTests
 
 ### 📸 EVIDENCIA 4: Compilación Maven Exitosa
 
-> **INSTRUCCIÓN:** Ejecuta `mvn clean package -DskipTests` y captura la salida mostrando "BUILD SUCCESS" para todos los módulos.
->
-> **Guardar como:** `evidencias/evidencia_4_maven_build.png`
+![Evidencia 4: Maven Build](evidencias/evidencia_4_maven_build.png)
+
+_Compilación exitosa de los 7 módulos del proyecto con Maven_
 
 ---
 
@@ -280,9 +280,9 @@ bank-microservices-cloud-config-server         latest   180MB
 
 ### 📸 EVIDENCIA 5: Imágenes Docker Creadas
 
-> **INSTRUCCIÓN:** Ejecuta `docker images | grep bank-microservices-cloud` y captura todas las imágenes con sus tamaños.
->
-> **Guardar como:** `evidencias/evidencia_5_docker_images.png`
+![Evidencia 5: Docker Images](evidencias/evidencia_5_docker_images.png)
+
+_6 imágenes Docker de los microservicios, optimizadas con Alpine Linux (180-215 MB cada una)_
 
 ---
 
@@ -378,9 +378,9 @@ volumes:
 
 ### 📸 EVIDENCIA 6: Archivo docker-compose.yml
 
-> **INSTRUCCIÓN:** Abre `docker-compose.yml` y captura la sección de servicios mostrando postgres, kafka, y al menos 2 microservicios.
->
-> **Guardar como:** `evidencias/evidencia_6_docker_compose.png`
+![Evidencia 6: docker-compose.yml](evidencias/evidencia_6_docker_compose.png)
+
+_Configuración de docker-compose.yml mostrando los 10 servicios orquestados_
 
 ---
 
@@ -432,9 +432,9 @@ bank-zookeeper             Up (healthy)              0.0.0.0:2181->2181/tcp
 
 ### 📸 EVIDENCIA 7: Contenedores en Ejecución
 
-> **INSTRUCCIÓN:** Ejecuta `docker-compose ps` y captura todos los contenedores mostrando estado "Up" y "(healthy)".
->
-> **Guardar como:** `evidencias/evidencia_7_containers_running.png`
+![Evidencia 7: Docker Containers Running](evidencias/evidencia_7_containers_running.png)
+
+_10 contenedores corriendo exitosamente, 9 con estado healthy_
 
 ---
 
@@ -453,9 +453,9 @@ Muestra los 4 microservicios registrados:
 
 ### 📸 EVIDENCIA 8: Eureka Dashboard
 
-> **INSTRUCCIÓN:** Abre http://localhost:8761 en el navegador y captura el dashboard mostrando los microservicios registrados.
->
-> **Guardar como:** `evidencias/evidencia_8_eureka_dashboard.png`
+![Evidencia 8: Eureka Server](evidencias/evidencia_8_eureka_dashboard.png)
+
+_Dashboard de Eureka mostrando los 4 microservicios registrados y su estado_
 
 ---
 
@@ -471,9 +471,9 @@ Interfaz visual para gestionar Kafka:
 
 ### 📸 EVIDENCIA 9: Kafka UI Dashboard
 
-> **INSTRUCCIÓN:** Abre http://localhost:8090 y captura la página principal mostrando el cluster "bank-cluster" y el topic "customer-created-events".
->
-> **Guardar como:** `evidencias/evidencia_9_kafka_ui.png`
+![Evidencia 9: Kafka UI](evidencias/evidencia_9_kafka_ui.png)
+
+_Interfaz de Kafka UI mostrando el cluster bank-cluster y el topic customer-created-events_
 
 ---
 
@@ -593,9 +593,9 @@ Tests fallidos: 0
 
 ### 📸 EVIDENCIA 10: Test de Kafka Exitoso
 
-> **INSTRUCCIÓN:** Ejecuta `./test-kafka.sh` y captura la salida completa mostrando todos los tests exitosos (8/8).
->
-> **Guardar como:** `evidencias/evidencia_10_kafka_test.png`
+![Evidencia 10: Kafka Tests](evidencias/evidencia_10_kafka_test.png)
+
+_Ejecución exitosa del script de pruebas de Kafka (8/8 tests pasados)_
 
 ---
 
