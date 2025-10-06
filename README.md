@@ -531,50 +531,39 @@ Basado en el dataset [bank_legacy_data](https://github.com/KariVillagran/bank_le
 
 #### Opción 1: Docker Compose (Recomendado)
 
-\`\`\`bash
-
+```bash
 # Clonar el repositorio
-
 git clone https://github.com/RodrigoSanchezDev/bank-microservices-cloud.git
 cd bank-microservices-cloud
 
 # Construir y levantar todos los servicios
-
 docker-compose up -d
 
 # Verificar estado
-
 docker-compose ps
 
 # Ver logs
-
 docker-compose logs -f
 
 # Detener servicios
-
 docker-compose down
-\`\`\`
+```
 
 #### Opción 2: Ejecución Local
 
-\`\`\`bash
-
+```bash
 # 1. Compilar
-
 mvn clean install -DskipTests
 
 # 2. Iniciar Config Server (Terminal 1)
-
 cd config-server && mvn spring-boot:run
 
 # 3. Iniciar Eureka Server (Terminal 2)
-
 cd eureka-server && mvn spring-boot:run
 
 # 4. Iniciar Account Service (Terminal 3)
-
 cd account-service && mvn spring-boot:run
-\`\`\`
+```
 
 ### Verificación
 
@@ -604,60 +593,53 @@ http://localhost:8888/account-service/default
 ### Account Service API
 
 **Autenticación (Obtener JWT)**
-\`\`\`bash
+
+```bash
 POST http://localhost:8081/api/auth/login
 Content-Type: application/json
 
 {
-"username": "admin",
-"password": "admin123"
+  "username": "admin",
+  "password": "admin123"
 }
-\`\`\`
+```
 
 ### Operaciones de Cuentas (requiere JWT)
 
-\`\`\`bash
-
+```bash
 # Listar cuentas
-
 GET http://localhost:8081/api/accounts
 Authorization: Bearer {token}
 
 # Crear cuenta
-
 POST http://localhost:8081/api/accounts
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-"accountNumber": "1234567890",
-"accountHolder": "Juan Pérez",
-"balance": 1000.00,
-"accountType": "SAVINGS"
+  "accountNumber": "1234567890",
+  "accountHolder": "Juan Pérez",
+  "balance": 1000.00,
+  "accountType": "SAVINGS"
 }
 
 # Obtener cuenta por ID
-
 GET http://localhost:8081/api/accounts/{id}
 Authorization: Bearer {token}
-\`\`\`
+```
 
 ### Health & Monitoreo
 
-\`\`\`bash
-
+```bash
 # Health check
-
 GET http://localhost:8081/actuator/health
 
 # Circuit Breaker estado
-
 GET http://localhost:8081/actuator/health/circuitbreakers
 
 # Métricas
-
 GET http://localhost:8081/actuator/metrics
-\`\`\`
+```
 
 ---
 
@@ -748,20 +730,16 @@ cancelRunningFuture: true
 
 ## 🧪 Testing y Calidad
 
-\`\`\`bash
-
+```bash
 # Ejecutar tests
-
 mvn clean test
 
 # Tests de un módulo
-
 cd account-service && mvn test
 
 # Reporte de cobertura
-
 mvn clean test jacoco:report
-\`\`\`
+```
 
 ### Colección Postman
 
@@ -773,47 +751,43 @@ Importa `postman-collection.json` para probar todos los endpoints.
 
 ### Spring Actuator
 
-\`\`\`bash
-
+```bash
 # Health check
-
 curl http://localhost:8081/actuator/health
 
 # Métricas
-
 curl http://localhost:8081/actuator/metrics
 
 # Info
-
 curl http://localhost:8081/actuator/info
-\`\`\`
+```
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-\`\`\`
+```
 bank-microservices-cloud/
-├── config-server/ # Configuración centralizada
-├── eureka-server/ # Service Discovery
-├── account-service/ # Microservicio de cuentas
-│ ├── src/main/java/
-│ │ └── com/duoc/bank/account/
-│ │ ├── config/ # Configuración
-│ │ ├── controller/ # REST Controllers
-│ │ ├── dto/ # Data Transfer Objects
-│ │ ├── model/ # Entidades JPA
-│ │ ├── repository/ # Repositorios
-│ │ ├── security/ # JWT Security
-│ │ └── service/ # Lógica de negocio
-│ └── src/main/resources/
-│ ├── application.yml
-│ └── data/ # Datos legacy CSV
+├── config-server/              # Configuración centralizada
+├── eureka-server/              # Service Discovery
+├── account-service/            # Microservicio de cuentas
+│   ├── src/main/java/
+│   │   └── com/duoc/bank/account/
+│   │       ├── config/         # Configuración
+│   │       ├── controller/     # REST Controllers
+│   │       ├── dto/            # Data Transfer Objects
+│   │       ├── model/          # Entidades JPA
+│   │       ├── repository/     # Repositorios
+│   │       ├── security/       # JWT Security
+│   │       └── service/        # Lógica de negocio
+│   └── src/main/resources/
+│       ├── application.yml
+│       └── data/               # Datos legacy CSV
 ├── docker-compose.yml
 ├── pom.xml
 ├── LICENSE
 └── README.md
-\`\`\`
+```
 
 ---
 
@@ -991,9 +965,9 @@ spec:
 Las contribuciones son bienvenidas. Por favor:
 
 1. Fork el proyecto
-2. Crea una rama para tu feature (\`git checkout -b feature/AmazingFeature\`)
-3. Commit tus cambios (\`git commit -m 'Add some AmazingFeature'\`)
-4. Push a la rama (\`git push origin feature/AmazingFeature\`)
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
 ---
