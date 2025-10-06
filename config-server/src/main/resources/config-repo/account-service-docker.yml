@@ -1,0 +1,17 @@
+# Configuración para Account Service - Perfil Docker
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:bankdb}
+    username: ${DB_USER:bankuser}
+    password: ${DB_PASSWORD:bankpass123}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    hostname: account-service

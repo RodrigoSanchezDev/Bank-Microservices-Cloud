@@ -1,0 +1,752 @@
+# Bank Microservices Cloud
+
+> Sistema bancario distribuido de alto rendimiento construido con arquitectura de microservicios
+
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
+[![Java](https://img.shields.io/badge/Java-21-or## 📁 Estructura del Proyecto
+
+```
+bank-microservices-cloud/
+├── config-server/                    # Servidor de configuración
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── com/duoc/bank/config/
+│   │   │   └── resources/
+│   │   │       ├── application.yml
+│   │   │       └── config-repo/      # Configuraciones centralizadas
+│   │   │           ├── account-service.yml
+│   │   │           └── application.yml
+│   │   └── test/
+│   └── pom.xml
+│
+├── eureka-server/                    # Service Discovery
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── com/duoc/bank/eureka/
+│   │   │   └── resources/
+│   │   │       └── application.yml
+│   │   └── test/
+│   └── pom.xml
+│
+├── account-service/                  # Microservicio de cuentas
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── com/duoc/bank/account/
+│   │   │   │       ├── config/       # Configuración de Spring
+│   │   │   │       ├── controller/   # REST Controllers
+│   │   │   │       ├── dto/          # Data Transfer Objects
+│   │   │   │       ├── model/        # Entidades JPA
+│   │   │   │       ├── repository/   # Repositorios JPA
+│   │   │   │       ├── security/     # Configuración JWT
+│   │   │   │       └── service/      # Lógica de negocio
+│   │   │   └── resources/
+│   │   │       ├── application.yml
+│   │   │       ├── application-docker.yml
+│   │   │       └── data/             # Datos legacy CSV
+│   │   └── test/
+│   └── pom.xml
+│
+├── docker-compose.yml                # Orquestación Docker
+├── pom.xml                          # Parent POM
+├── LICENSE                          # Licencia MIT
+├── README.md                        # Este archivo
+├── CONFIGURACION_VSCODE.md          # Guía de configuración IDE
+├── LIMPIEZA.md                      # Registro de limpieza
+└── postman-collection.json          # Colección de APIs
+
+```
+
+## 🔧 Configuración de Desarrollo
+
+### Variables de Entorno (Desarrollo)
+
+Crea un archivo `.env` en la raíz del proyecto:
+
+```bash
+# Database
+POSTGRES_DB=bankdb
+POSTGRES_USER=bankuser
+POSTGRES_PASSWORD=bankpass
+
+# JWT
+JWT_SECRET=your-secret-key-min-256-bits-base64-encoded
+JWT_EXPIRATION=86400000
+
+# Ports
+CONFIG_SERVER_PORT=8888
+EUREKA_SERVER_PORT=8761
+ACCOUNT_SERVICE_PORT=8081
+```
+
+### Configuración de IDE
+
+**IntelliJ IDEA**:
+
+1. Importar como proyecto Maven
+2. Habilitar annotation processing para Lombok
+3. Instalar plugin Lombok
+
+**VS Code**:
+
+1. Instalar Extension Pack for Java
+2. Instalar Lombok Annotations Support
+3. Ver `CONFIGURACION_VSCODE.md` para detalles
+
+## 📝 Patrones Implementados//openjdk.org/)
+
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## 📋 Descripción
+
+Plataforma empresarial de microservicios para gestión bancaria que implementa patrones avanzados de resiliencia, configuración centralizada, descubrimiento de servicios y seguridad distribuida mediante Spring Cloud y Resilience4j.
+
+## 🏗️ Arquitectura
+
+### Diagrama de Componentes
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  API Gateway (8080)                      │
+│           Autenticación JWT + Enrutamiento               │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
+│Config Server │ │   Eureka   │ │  Account   │
+│   (8888)     │ │   Server   │ │  Service   │
+│              │ │   (8761)   │ │  (8081)    │
+└──────────────┘ └────────────┘ └─────┬──────┘
+                                       │
+                                ┌──────▼──────┐
+                                │ PostgreSQL  │
+                                │   (5432)    │
+                                └─────────────┘
+```
+
+### Principios Arquitectónicos
+
+- **Independencia de Servicios**: Cada microservicio puede desplegarse independientemente
+- **Configuración Externalizada**: Configuraciones centralizadas en Config Server
+- **Descubrimiento Dinámico**: Registro automático de servicios en Eureka
+- **Resiliencia**: Implementación de Circuit Breaker, Retry y Rate Limiting
+- **Seguridad Distribuida**: Autenticación JWT en cada microservicio
+
+## 🚀 Componentes
+
+### Config Server (Puerto 8888)
+
+**Servidor de configuración centralizada**
+
+- Gestiona configuraciones de todos los microservicios
+- Soporte para perfiles de ambiente (dev, prod)
+- Actualización de configuración en tiempo real
+- Configuración basada en repositorio local
+
+### Eureka Server (Puerto 8761)
+
+**Service Discovery y Service Registry**
+
+- Registro automático de microservicios
+- Dashboard web para monitoreo de servicios
+- Detección de servicios caídos (heartbeat)
+- Balanceo de carga del lado del cliente
+
+### Account Service (Puerto 8081)
+
+**Microservicio de gestión bancaria**
+
+**Características**:
+
+- ✅ API RESTful para operaciones CRUD de cuentas
+- ✅ Procesamiento de datos legacy del sistema bancario
+- ✅ Autenticación y autorización JWT
+- ✅ Integración con PostgreSQL mediante JPA/Hibernate
+- ✅ Documentación Swagger/OpenAPI
+- ✅ Spring Actuator para métricas y health checks
+
+**Patrones de Resiliencia**:
+
+- **Circuit Breaker**: Protección contra fallos en cascada
+- **Retry**: Reintentos automáticos con backoff exponencial
+- **Rate Limiter**: Control de tráfico (10 req/min)
+- **Time Limiter**: Timeout en operaciones de larga duración
+
+### API Gateway (Puerto 8080)
+
+**Punto de entrada unificado** _(Opcional - Recomendado para producción)_
+
+- Enrutamiento inteligente de peticiones
+- Autenticación centralizada
+- Rate limiting global
+- Logging y monitoreo centralizado
+
+## 📊 Modelo de Datos
+
+### Entidades Principales
+
+**Cuentas Bancarias** (`accounts`)
+
+- Gestión completa de cuentas
+- Tipos: Ahorros, Corriente, Nómina
+- Control de saldos y estados
+
+**Transacciones** (`transactions`)
+
+- Registro de movimientos financieros
+- Tipos: Depósito, Retiro, Transferencia
+- Validación de reglas de negocio
+
+**Intereses** (`interests`)
+
+- Cálculo automático de intereses
+- Aplicación mensual según tipo de cuenta
+- Historial de aplicaciones
+
+**Usuarios** (`users`)
+
+- Autenticación y autorización
+- Roles: ADMIN, USER
+- Gestión de credenciales JWT
+
+### Referencia de Datos Legacy
+
+Basado en el dataset [bank_legacy_data](https://github.com/KariVillagran/bank_legacy_data) para procesamiento de información histórica.
+
+## 🛠️ Stack Tecnológico
+
+| Tecnología      | Versión  | Propósito                       |
+| --------------- | -------- | ------------------------------- |
+| Java            | 21       | Lenguaje de programación        |
+| Spring Boot     | 3.5.0    | Framework de aplicación         |
+| Spring Cloud    | 2024.0.0 | Framework de microservicios     |
+| Spring Security | 6.x      | Seguridad y autenticación       |
+| Resilience4j    | 2.x      | Patrones de resiliencia         |
+| PostgreSQL      | 15+      | Base de datos relacional        |
+| Docker          | Latest   | Contenedorización               |
+| Maven           | 3.8+     | Gestión de dependencias         |
+| Lombok          | 1.18.34  | Reducción de código boilerplate |
+
+## 🔧 Requisitos Previos
+
+- **JDK**: 21 o superior
+- **Maven**: 3.8 o superior
+- **Docker**: 20.10 o superior
+- **Docker Compose**: 2.0 o superior
+- **PostgreSQL**: 15+ (si se ejecuta sin Docker)
+
+## 🚀 Inicio Rápido
+
+### Instalación y Despliegue
+
+#### Opción 1: Docker Compose (Recomendado)
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/RodrigoSanchezDev/bank-microservices-cloud.git
+cd bank-microservices-cloud
+
+# Construir y levantar todos los servicios
+docker-compose up -d
+
+# Verificar estado de los servicios
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Detener todos los servicios
+docker-compose down
+
+# Detener y eliminar volúmenes
+docker-compose down -v
+```
+
+#### Opción 2: Ejecución Local (Desarrollo)
+
+```bash
+# 1. Compilar todos los módulos
+mvn clean install -DskipTests
+
+# 2. Iniciar Config Server (Terminal 1)
+cd config-server
+mvn spring-boot:run
+
+# 3. Iniciar Eureka Server (Terminal 2)
+cd eureka-server
+mvn spring-boot:run
+
+# 4. Iniciar Account Service (Terminal 3)
+cd account-service
+mvn spring-boot:run
+```
+
+#### Verificación de Servicios
+
+Espera aproximadamente 60 segundos para que todos los servicios se registren correctamente.
+
+**Verificar estado**:
+
+- Config Server: http://localhost:8888/actuator/health
+- Eureka Dashboard: http://localhost:8761
+- Account Service: http://localhost:8081/actuator/health
+
+## 📍 Endpoints Principales
+
+### Eureka Dashboard
+
+```
+http://localhost:8761
+```
+
+### Config Server
+
+```
+http://localhost:8888/account-service/default
+```
+
+### Account Service API
+
+**Autenticación (Obtener JWT)**
+
+```bash
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+**Operaciones de Cuentas (requiere JWT)**
+
+```bash
+# Listar cuentas
+GET http://localhost:8081/api/accounts
+Authorization: Bearer {token}
+
+# Crear cuenta
+POST http://localhost:8081/api/accounts
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "accountNumber": "1234567890",
+  "accountHolder": "Juan Pérez",
+  "balance": 1000.00,
+  "accountType": "SAVINGS"
+}
+
+# Obtener cuenta por ID
+GET http://localhost:8081/api/accounts/{id}
+Authorization: Bearer {token}
+```
+
+**Health & Actuator**
+
+```bash
+# Health check
+GET http://localhost:8081/actuator/health
+
+# Circuit Breaker estado
+GET http://localhost:8081/actuator/health/circuitbreakers
+
+# Métricas
+GET http://localhost:8081/actuator/metrics
+```
+
+## 🔒 Seguridad
+
+### Autenticación JWT
+
+El sistema implementa autenticación basada en JSON Web Tokens (JWT) con las siguientes características:
+
+**Configuración de Tokens**:
+
+- Algoritmo: HS512
+- Tiempo de vida: 24 horas
+- Claims personalizados: username, roles, authorities
+
+**Credenciales por Defecto**:
+
+```json
+{
+  "username": "admin",
+  "password": "admin123",
+  "role": "ADMIN"
+}
+```
+
+⚠️ **Importante**: Cambia las credenciales por defecto en producción y utiliza variables de entorno para secretos.
+
+### Endpoints Protegidos
+
+- ✅ Todos los endpoints bajo `/api/accounts` requieren autenticación
+- ✅ Endpoints administrativos requieren rol `ADMIN`
+- ✅ Endpoints de lectura disponibles para rol `USER`
+- ❌ Endpoints públicos: `/api/auth/login`, `/actuator/health`
+
+## 🛡️ Patrones de Resiliencia
+
+### Circuit Breaker (Resilience4j)
+
+**Configuración**:
+
+```yaml
+slidingWindowSize: 10
+failureRateThreshold: 50
+waitDurationInOpenState: 10s
+permittedNumberOfCallsInHalfOpenState: 3
+```
+
+**Estados**:
+
+- **CLOSED**: Operación normal, todas las peticiones pasan
+- **OPEN**: Umbral alcanzado, peticiones fallan rápidamente
+- **HALF_OPEN**: Prueba si el servicio se recuperó
+
+### Retry Pattern
+
+**Configuración**:
+
+```yaml
+maxAttempts: 3
+waitDuration: 2s
+retryExceptions:
+  - java.io.IOException
+  - java.util.concurrent.TimeoutException
+```
+
+**Estrategia**: Exponential backoff con jitter
+
+### Rate Limiter
+
+**Configuración**:
+
+```yaml
+limitForPeriod: 10
+limitRefreshPeriod: 1m
+timeoutDuration: 0
+```
+
+**Protección**: Límite de 10 peticiones por minuto por endpoint
+
+### Time Limiter
+
+**Configuración**:
+
+```yaml
+timeoutDuration: 5s
+cancelRunningFuture: true
+```
+
+**Objetivo**: Prevenir operaciones de larga duración
+
+````
+
+## 📊 Monitoreo y Observabilidad
+
+### Spring Actuator Endpoints
+
+**Health Check**:
+```bash
+# Estado general del servicio
+curl http://localhost:8081/actuator/health
+
+# Estado del Circuit Breaker
+curl http://localhost:8081/actuator/health/circuitbreakers
+
+# Estado de la base de datos
+curl http://localhost:8081/actuator/health/db
+````
+
+**Métricas**:
+
+```bash
+# Métricas disponibles
+curl http://localhost:8081/actuator/metrics
+
+# Métricas de JVM
+curl http://localhost:8081/actuator/metrics/jvm.memory.used
+
+# Métricas de HTTP
+curl http://localhost:8081/actuator/metrics/http.server.requests
+```
+
+**Información del Servicio**:
+
+```bash
+# Info de la aplicación
+curl http://localhost:8081/actuator/info
+
+# Variables de entorno
+curl http://localhost:8081/actuator/env
+```
+
+### Logging
+
+Niveles de log configurables por ambiente:
+
+- **DEV**: DEBUG
+- **PROD**: INFO, WARN, ERROR
+
+Formato de logs: JSON estructurado para integración con ELK Stack
+
+## 🚀 Despliegue en Producción
+
+### Consideraciones de Producción
+
+**Variables de Entorno Requeridas**:
+
+```bash
+# Base de datos
+SPRING_DATASOURCE_URL=jdbc:postgresql://host:5432/bankdb
+SPRING_DATASOURCE_USERNAME=${DB_USER}
+SPRING_DATASOURCE_PASSWORD=${DB_PASS}
+
+# JWT
+JWT_SECRET=${JWT_SECRET_KEY}
+JWT_EXPIRATION=86400000
+
+# Eureka
+EUREKA_CLIENT_SERVICE_URL=http://eureka-server:8761/eureka/
+```
+
+**Checklist Pre-Producción**:
+
+- [ ] Cambiar credenciales por defecto
+- [ ] Configurar secreto JWT desde variable de entorno
+- [ ] Habilitar HTTPS/TLS
+- [ ] Configurar límites de recursos (CPU, Memoria)
+- [ ] Implementar backup de base de datos
+- [ ] Configurar monitoreo y alertas
+- [ ] Revisar logs de seguridad
+- [ ] Realizar pruebas de carga
+
+### Docker en Producción
+
+```bash
+# Build optimizado
+docker-compose -f docker-compose.prod.yml build
+
+# Deploy
+docker-compose -f docker-compose.prod.yml up -d
+
+# Escalado horizontal
+docker-compose up -d --scale account-service=3
+```
+
+## 📁 Estructura del Proyecto
+
+```
+bank-microservices-cloud/
+├── config-server/              # Servidor de configuración
+├── eureka-server/              # Service Discovery
+├── account-service/            # Microservicio de cuentas
+├── config-repo/               # Archivos de configuración
+│   ├── account-service.yml
+│   ├── application.yml
+│   └── eureka-server.yml
+├── docker-compose.yml
+├── pom.xml                    # Parent POM
+└── README.md
+```
+
+## 🧪 Testing y Calidad
+
+### Ejecutar Tests
+
+```bash
+# Tests de todos los módulos
+mvn clean test
+
+# Tests de un módulo específico
+cd account-service
+mvn test
+
+# Tests con reporte de cobertura
+mvn clean test jacoco:report
+
+# Tests de integración
+mvn verify -P integration-tests
+```
+
+### Colección Postman
+
+El proyecto incluye una colección completa de Postman con todos los endpoints documentados:
+
+```bash
+# Importar colección
+postman-collection.json
+```
+
+### Verificación de Resiliencia
+
+**Test de Circuit Breaker**:
+
+```bash
+# Forzar apertura del circuit breaker
+for i in {1..10}; do
+  curl -X POST http://localhost:8081/api/test/circuit-breaker
+done
+
+# Verificar estado
+curl http://localhost:8081/actuator/health/circuitbreakers
+```
+
+**Test de Rate Limiter**:
+
+```bash
+# Exceder límite de peticiones
+for i in {1..15}; do
+  curl -X GET http://localhost:8081/api/accounts \
+    -H "Authorization: Bearer {token}"
+done
+```
+
+## 📝 Patrones Implementados
+
+- ✅ **Configuración Centralizada** - Spring Cloud Config Server
+- ✅ **Service Discovery** - Netflix Eureka
+- ✅ **Circuit Breaker** - Resilience4j
+- ✅ **Retry Pattern** - Resilience4j
+- ✅ **Rate Limiting** - Resilience4j
+- ✅ **Time Limiter** - Resilience4j
+- ✅ **Authentication & Authorization** - Spring Security + JWT
+- ✅ **API Gateway Pattern** - Routing centralizado
+
+## ❓ FAQ (Preguntas Frecuentes)
+
+<details>
+<summary><b>¿Por qué usar microservicios en lugar de monolito?</b></summary>
+
+Los microservicios permiten:
+
+- Escalado independiente de cada componente
+- Despliegue continuo sin afectar todo el sistema
+- Tecnologías diferentes por servicio según necesidad
+- Equipos independientes trabajando en paralelo
+- Mayor resiliencia ante fallos
+</details>
+
+<details>
+<summary><b>¿Cómo funciona el Circuit Breaker?</b></summary>
+
+El Circuit Breaker previene fallos en cascada:
+
+1. Monitorea llamadas a servicios externos
+2. Si detecta muchos fallos, "abre el circuito"
+3. Rechaza peticiones rápidamente sin intentar la llamada
+4. Después de un tiempo, prueba si el servicio se recuperó
+5. Si funciona, "cierra el circuito" y vuelve a la normalidad
+</details>
+
+<details>
+<summary><b>¿Es necesario usar Docker?</b></summary>
+
+No es obligatorio, pero altamente recomendado porque:
+
+- Garantiza consistencia entre ambientes
+- Simplifica el despliegue
+- Facilita la escalabilidad
+- Incluye todas las dependencias necesarias
+- Puedes ejecutar todo localmente con Maven si prefieres
+</details>
+
+<details>
+<summary><b>¿Cómo agrego un nuevo microservicio?</b></summary>
+
+1. Crea un nuevo módulo Maven
+2. Registra en Eureka con `@EnableEurekaClient`
+3. Agrega configuración en Config Server
+4. Implementa tu lógica de negocio
+5. Agrega entrada en `docker-compose.yml`
+6. Actualiza el README con la documentación
+</details>
+
+## 🗺️ Roadmap
+
+### Versión Actual (v1.0.0)
+
+- ✅ Arquitectura base de microservicios
+- ✅ Service Discovery con Eureka
+- ✅ Configuración centralizada
+- ✅ Autenticación JWT
+- ✅ Patrones de resiliencia (Circuit Breaker, Retry, Rate Limit)
+- ✅ API de gestión de cuentas
+- ✅ Procesamiento de datos legacy
+
+### Próximas Funcionalidades (v1.1.0)
+
+- [ ] API Gateway con Spring Cloud Gateway
+- [ ] Distributed Tracing con Zipkin/Sleuth
+- [ ] Métricas centralizadas con Prometheus
+- [ ] Dashboard con Grafana
+- [ ] Caché distribuido con Redis
+- [ ] Event-Driven con Kafka/RabbitMQ
+
+### Futuro (v2.0.0)
+
+- [ ] Migración a arquitectura reactiva (WebFlux)
+- [ ] GraphQL API
+- [ ] Saga Pattern para transacciones distribuidas
+- [ ] Service Mesh con Istio
+- [ ] Kubernetes deployment manifests
+- [ ] CI/CD pipeline completo
+
+## 📚 Recursos y Referencias
+
+### Documentación Oficial
+
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [Spring Cloud](https://spring.io/projects/spring-cloud)
+- [Resilience4j](https://resilience4j.readme.io/)
+- [Netflix Eureka](https://github.com/Netflix/eureka/wiki)
+
+### Artículos Relacionados
+
+- [Microservices Patterns](https://microservices.io/patterns/index.html)
+- [The Twelve-Factor App](https://12factor.net/)
+- [Circuit Breaker Pattern](https://martinfowler.com/bliki/CircuitBreaker.html)
+
+### Tutoriales
+
+- [Spring Cloud Netflix](https://cloud.spring.io/spring-cloud-netflix/reference/html/)
+- [Resilience4j Guide](https://resilience4j.readme.io/docs/getting-started)
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📧 Contacto
+
+**Rodrigo Sanchez**
+
+- Email: [rodrigo@sanchezdev.com](mailto:rodrigo@sanchezdev.com)
+- Website: [sanchezdev.com](https://sanchezdev.com)
+- GitHub: [@RodrigoSanchezDev](https://github.com/RodrigoSanchezDev)
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+<div align="center">
+
+**Desarrollado con ❤️ por [Rodrigo Sanchez](https://sanchezdev.com)**
+
+Copyright © 2025 Rodrigo Sanchez. Todos los derechos reservados.
+
+</div>
