@@ -431,7 +431,195 @@ spring:
 
 ---
 
-## 📚 Recursos y Referencias
+## � Evidencias del Proyecto
+
+### 🔐 OAuth 2.0 & JWT Authentication
+
+#### Evidencia 1: Generador de Tokens JWT (JwtUtil.java)
+
+![Evidencia 1: JwtUtil.java](evidencias/evidencia_1_oauth_jwt_util.png)
+
+_Implementación completa del generador y validador de tokens JWT con firma HMAC-SHA256_
+
+**Características**:
+
+- ✅ Generación de tokens JWT con expiración configurable (24h)
+- ✅ Validación y verificación de firma
+- ✅ Extracción de claims (username, roles)
+- ✅ Manejo de excepciones de tokens inválidos/expirados
+
+---
+
+#### Evidencia 2: Filtro de Autenticación JWT (JwtAuthenticationFilter.java)
+
+![Evidencia 2: JwtAuthenticationFilter.java](evidencias/evidencia_2_oauth_filter.png)
+
+_Filtro global en API Gateway BFF que intercepta y valida todas las peticiones_
+
+**Características**:
+
+- ✅ Interceptación de peticiones HTTP en Spring Cloud Gateway
+- ✅ Validación de token en header `Authorization: Bearer <token>`
+- ✅ Exclusión de rutas públicas (`/auth/**`, `/actuator/**`)
+- ✅ Respuesta 401 para tokens inválidos
+
+---
+
+### 🐳 Dockerización de Microservicios
+
+#### Evidencia 3: Dockerfile Optimizado (Customer Service)
+
+![Evidencia 3: Dockerfile](evidencias/evidencia_3_dockerfile.png)
+
+_Dockerfile con imagen Alpine Linux ultra-ligera para máxima eficiencia_
+
+**Características**:
+
+- ✅ Imagen base: `eclipse-temurin:21-jre-alpine` (solo JRE, no JDK)
+- ✅ Tamaño reducido: ~215 MB vs ~500 MB con JDK completo
+- ✅ Variables de entorno configurables (`JAVA_OPTS`)
+- ✅ Security: superficie de ataque mínima
+
+---
+
+#### Evidencia 4: Compilación Maven Exitosa
+
+![Evidencia 4: Maven Build](evidencias/evidencia_4_maven_build.png)
+
+_Compilación exitosa de los 7 módulos del proyecto con Maven_
+
+**Módulos compilados**:
+
+1. ✅ bank-microservices-cloud (parent)
+2. ✅ config-server
+3. ✅ eureka-server
+4. ✅ api-gateway-bff
+5. ✅ account-service
+6. ✅ customer-service
+7. ✅ transaction-service
+
+---
+
+#### Evidencia 5: Imágenes Docker Creadas
+
+![Evidencia 5: Docker Images](evidencias/evidencia_5_docker_images.png)
+
+_6 imágenes Docker optimizadas con Alpine Linux (180-653 MB cada una)_
+
+**Imágenes generadas**:
+
+- `bank-microservices-cloud-config-server` (565 MB)
+- `bank-microservices-cloud-eureka-server` (591 MB)
+- `bank-microservices-cloud-api-gateway-bff` (392 MB)
+- `bank-microservices-cloud-account-service` (653 MB)
+- `bank-microservices-cloud-customer-service` (480 MB)
+- `bank-microservices-cloud-transaction-service` (480 MB)
+
+---
+
+### 🎼 Orquestación con Docker Compose
+
+#### Evidencia 6: Configuración docker-compose.yml
+
+![Evidencia 6: docker-compose.yml](evidencias/evidencia_6_docker_compose.png)
+
+_Orquestación de 10 contenedores con dependencias y health checks_
+
+**Servicios configurados**:
+
+- **Infrastructure Layer**: postgres, zookeeper, kafka, kafka-ui
+- **Spring Cloud Layer**: config-server, eureka-server
+- **Microservices Layer**: api-gateway-bff, account-service, customer-service, transaction-service
+
+---
+
+#### Evidencia 7: Contenedores en Ejecución
+
+![Evidencia 7: Docker Containers Running](evidencias/evidencia_7_containers_running.png)
+
+_10 contenedores corriendo exitosamente, 9 con estado healthy_
+
+**Estado de contenedores**:
+
+- ✅ 9 contenedores **healthy** (con health checks configurados)
+- ⚠️ 1 contenedor **running** (api-gateway-bff - reactive gateway)
+- ✅ Todos los puertos mapeados correctamente
+- ✅ Red `bank-network` funcionando
+
+---
+
+#### Evidencia 8: Eureka Service Discovery Dashboard
+
+![Evidencia 8: Eureka Server](evidencias/evidencia_8_eureka_dashboard.png)
+
+_Dashboard de Eureka mostrando los 4 microservicios registrados dinámicamente_
+
+**Microservicios registrados**:
+
+- ✅ **API-GATEWAY-BFF** (puerto 8443) - HTTPS Gateway
+- ✅ **ACCOUNT-SERVICE** (puerto 8081) - Gestión de cuentas
+- ✅ **CUSTOMER-SERVICE** (puerto 8082) - Gestión de clientes
+- ✅ **TRANSACTION-SERVICE** (puerto 8083) - Gestión de transacciones
+
+---
+
+#### Evidencia 9: Kafka UI - Event Streaming
+
+![Evidencia 9: Kafka UI](evidencias/evidencia_9_kafka_ui.png)
+
+_Interfaz de Kafka UI mostrando el cluster y topic de eventos de clientes_
+
+**Configuración Kafka**:
+
+- ✅ **Cluster**: bank-cluster
+- ✅ **Topic**: customer-created-events (3 partitions)
+- ✅ **Zookeeper**: coordinación del cluster (puerto 2181)
+- ✅ **Kafka Broker**: puerto 9092 (interno) y 29092 (externo)
+- ✅ **Kafka UI**: interfaz web en puerto 8090
+
+---
+
+### 🚀 Funcionalidades Extra - Apache Kafka
+
+#### Evidencia 10: Tests de Kafka - Event-Driven Architecture
+
+![Evidencia 10: Kafka Tests](evidencias/evidencia_10_kafka_test.png)
+
+_Suite de pruebas automatizadas de Kafka con 8/8 tests exitosos_
+
+**Tests ejecutados**:
+
+1. ✅ Verificación de contenedores Kafka (Zookeeper, Kafka, Kafka UI)
+2. ✅ Conectividad a Kafka UI (HTTP 200)
+3. ✅ Obtención de token JWT del BFF
+4. ✅ Creación de cliente de prueba (HTTP 201)
+5. ✅ Publicación de evento CustomerCreated
+6. ✅ Consumo de evento en Transaction Service
+7. ✅ Creación de 3 clientes adicionales
+8. ✅ Verificación de 4 eventos en total
+
+**Arquitectura Event-Driven**:
+
+- ✅ **Producer**: Customer Service publica eventos al crear clientes
+- ✅ **Consumer**: Transaction Service escucha y procesa eventos
+- ✅ **Event**: `CustomerCreatedEvent` con datos completos del cliente
+- ✅ **Asincronía**: Desacoplamiento entre servicios
+
+---
+
+### 📊 Resumen de Evidencias
+
+| Categoría          | Evidencias                                          | Estado                  |
+| ------------------ | --------------------------------------------------- | ----------------------- |
+| **OAuth 2.0**      | 2 evidencias (JwtUtil, JwtAuthenticationFilter)     | ✅ Completado           |
+| **Dockerización**  | 3 evidencias (Dockerfile, Build, Images)            | ✅ Completado           |
+| **Docker Compose** | 4 evidencias (Config, Containers, Eureka, Kafka UI) | ✅ Completado           |
+| **Kafka (Extra)**  | 1 evidencia (Tests automatizados)                   | ✅ Completado           |
+| **Total**          | **10 evidencias**                                   | ✅ **100% Documentado** |
+
+---
+
+## �📚 Recursos y Referencias
 
 ### Documentación Oficial
 
@@ -469,6 +657,7 @@ spring:
 - [Monitoreo y Observabilidad](#-monitoreo-y-observabilidad)
 - [Preguntas Frecuentes (FAQ)](#-preguntas-frecuentes-faq)
 - [Roadmap](#️-roadmap)
+- [Evidencias del Proyecto](#-evidencias-del-proyecto)
 - [Recursos y Referencias](#-recursos-y-referencias)
 - [Estructura del Proyecto](#-estructura-del-proyecto)
 - [Patrones Implementados](#-patrones-implementados)
