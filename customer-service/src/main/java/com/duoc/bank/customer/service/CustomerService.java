@@ -1,6 +1,8 @@
 package com.duoc.bank.customer.service;
 
+import com.duoc.bank.customer.event.CustomerCreatedEvent;
 import com.duoc.bank.customer.model.Customer;
+import com.duoc.bank.customer.producer.CustomerEventProducer;
 import com.duoc.bank.customer.repository.CustomerRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -9,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +24,7 @@ import java.util.Optional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final CustomerEventProducer customerEventProducer;
 
     /**
      * Obtiene todos los clientes
@@ -79,7 +83,36 @@ public class CustomerService {
             throw new IllegalArgumentException("Ya existe un cliente con el email: " + customer.getEmail());
         }
         
-        return customerRepository.save(customer);
+        Customer savedCustomer = customerRepository.save(customer);
+        
+        // Publicar evento Kafka
+        publishCustomerCreatedEvent(savedCustomer);
+        
+        return savedCustomer;
+    }
+    
+    /**
+     * Publica el evento de cliente creado a Kafka
+     */
+    private void publishCustomerCreatedEvent(Customer customer) {
+        try {
+            CustomerCreatedEvent event = new CustomerCreatedEvent(
+                customer.getId(),
+                customer.getRut(),
+                customer.getFirstName(),
+                customer.getLastName(),
+                customer.getEmail(),
+                customer.getPhone(),
+                customer.getStatus().toString(),
+                LocalDateTime.now()
+            );
+            
+            customerEventProducer.publishCustomerCreated(event);
+            log.info("✅ Evento Kafka publicado para cliente ID: {}", customer.getId());
+        } catch (Exception e) {
+            log.error("❌ Error al publicar evento Kafka para cliente ID: {}", customer.getId(), e);
+            // No lanzamos excepción para no afectar la transacción principal
+        }
     }
 
     /**

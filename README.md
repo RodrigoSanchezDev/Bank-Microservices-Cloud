@@ -357,7 +357,12 @@ spring:
 - ✅ Patrones de Resiliencia (Resilience4j)
 - ✅ PostgreSQL (3 bases de datos independientes)
 - ✅ Containerización Docker
-- ✅ **Suite de Tests (test-all-endpoints.sh - 100% funcional)**
+- ✅ **Apache Kafka + Zookeeper + Kafka UI**
+- ✅ **Event-Driven Architecture (Customer Events)**
+- ✅ **Kafka Producer (Customer Service)**
+- ✅ **Kafka Consumer (Transaction Service)**
+- ✅ **Suite de Tests REST (test-all-endpoints.sh - 100% funcional)**
+- ✅ **Suite de Tests Kafka (test-kafka.sh - 100% funcional)**
 - ✅ Spring Boot 3.5.0
 - ✅ Spring Cloud 2024.0.0
 - ✅ Java 21
@@ -381,10 +386,13 @@ spring:
   - Redis para sesiones
   - Caché de consultas frecuentes
 
-- 🔄 **Mensajería Asíncrona**
-  - Apache Kafka / RabbitMQ
-  - Event-driven architecture
-  - SAGA Pattern para transacciones distribuidas
+- ✅ **Mensajería Asíncrona** _(Completado)_
+  - ✅ Apache Kafka implementado
+  - ✅ Event-driven architecture
+  - ✅ Customer events (create, update, delete)
+  - ⏳ SAGA Pattern para transacciones distribuidas
+  - ⏳ Dead Letter Queue (DLQ)
+  - ⏳ Event Sourcing completo
 
 ### 🌟 v2.0.0 - Escalabilidad y Cloud Native (Futuro)
 
@@ -481,16 +489,19 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 - ✅ **API Gateway (BFF)** con Spring Cloud Gateway Reactive
 - ✅ **HTTPS/TLS** con certificado SSL auto-firmado (puerto 8443)
 - ✅ **Autenticación JWT Centralizada** en API Gateway (sin Spring Security)
+- ✅ **Event-Driven Architecture** con Apache Kafka
+- ✅ **Kafka UI** para visualización de eventos en tiempo real (puerto 8090)
 - ✅ **3 Microservicios de Negocio** (Account, Customer, Transaction)
 - ✅ **27 Endpoints Funcionales** (11 Account + 8 Customer + 8 Transaction)
+- ✅ **Mensajería Asíncrona** (Producer/Consumer con Spring Kafka)
 - ✅ **Configuración Centralizada** con Spring Cloud Config
 - ✅ **Service Discovery** con Netflix Eureka
 - ✅ **Patrones de Resiliencia** (Circuit Breaker, Retry, Rate Limiting)
-- ✅ **Contenedorización** con Docker y Docker Compose
+- ✅ **Contenedorización** con Docker y Docker Compose (10 contenedores)
 - ✅ **API RESTful** documentada con Swagger/OpenAPI
 - ✅ **Monitoreo** con Spring Actuator
 - ✅ **Bases de Datos Independientes** por microservicio
-- ✅ **Suite de Tests Automatizada** (100% endpoints funcionando)
+- ✅ **Suite de Tests Automatizada** (REST + Kafka - 100% funcional)
 
 ---
 
@@ -500,8 +511,8 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              API Gateway (8080)                          │
-│         Autenticación JWT + Enrutamiento                │
+│          API Gateway BFF (8443 HTTPS)                   │
+│      JWT Authentication + Routing + Circuit Breaker     │
 └───────────────────────┬─────────────────────────────────┘
                         │
         ┌───────────────┴───────────────────────────┐
@@ -519,11 +530,25 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
                  │   (8081)    │         │    (8082)     │ │   (8083)    │
                  └──────┬──────┘         └───────┬───────┘ └─────┬───────┘
                         │                        │               │
+                        │                        │ Kafka         │ Kafka
+                        │                        │ Producer      │ Consumer
+                        │                        │               │
+                        │                 ┌──────▼───────────────▼──────┐
+                        │                 │    Apache Kafka (9092)      │
+                        │                 │  customer-created-events    │
+                        │                 └──────┬─────────┬────────────┘
+                        │                        │         │
+                        │                 ┌──────▼──┐  ┌───▼────────┐
+                        │                 │Zookeeper│  │  Kafka UI  │
+                        │                 │ (2181)  │  │   (8090)   │
+                        │                 └─────────┘  └────────────┘
+                        │
                         └────────────────────────┼───────────────┘
                                                  │
                                           ┌──────▼──────┐
                                           │ PostgreSQL  │
                                           │   (5432)    │
+                                          │  3 Databases│
                                           └─────────────┘
 ```
 
@@ -636,6 +661,109 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 - Rate Limiter (control de tráfico: 10 req/s)
 - Time Limiter (timeout de 3 segundos)
 
+### Apache Kafka (Puertos 9092/29092)
+
+**Sistema de mensajería distribuida para Event-Driven Architecture**
+
+**Características**:
+
+- Event Streaming para comunicación asíncrona entre microservicios
+- Arquitectura Pub/Sub de alto rendimiento
+- Persistencia de eventos para auditoría
+- Procesamiento de eventos en tiempo real
+
+**Componentes Kafka**:
+
+1. **Zookeeper** (Puerto 2181)
+
+   - Coordinación de cluster Kafka
+   - Gestión de metadatos
+   - Healthcheck: `cub zk-ready`
+
+2. **Kafka Broker** (Puertos 9092/29092)
+
+   - Broker principal de mensajes
+   - Auto-creación de topics habilitada
+   - Replication factor: 1 (desarrollo)
+   - Healthcheck: `cub kafka-ready`
+
+3. **Kafka UI** (Puerto 8090)
+   - Interfaz web para visualización de mensajes
+   - Monitoreo de topics y consumers
+   - Visualización de eventos en tiempo real
+   - Acceso: `http://localhost:8090`
+
+**Topics Implementados**:
+
+- **`customer-created-events`** (3 particiones)
+  - Eventos de creación de clientes
+  - Producer: Customer Service
+  - Consumer: Transaction Service
+  - Formato: JSON con CustomerCreatedEvent
+
+**Flujo de Eventos**:
+
+```
+┌──────────────────┐         ┌───────────────┐         ┌────────────────────┐
+│ Customer Service │────────>│  Kafka Topic  │────────>│Transaction Service │
+│   (Producer)     │ Publish │customer-created│Consume │   (Consumer)       │
+└──────────────────┘         │    -events    │        └────────────────────┘
+                             └───────────────┘
+```
+
+**Event Schema** (CustomerCreatedEvent):
+
+```json
+{
+  "customerId": 123,
+  "rut": "12345678-9",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "+56912345678",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-06T21:18:41.350236046"
+}
+```
+
+**Uso**:
+
+1. **Verificar Kafka UI**:
+
+   ```bash
+   # Abrir en navegador
+   open http://localhost:8090
+   ```
+
+2. **Ver topics desde terminal**:
+
+   ```bash
+   docker exec -it bank-kafka kafka-topics \
+     --bootstrap-server localhost:9092 --list
+   ```
+
+3. **Consumir mensajes**:
+
+   ```bash
+   docker exec -it bank-kafka kafka-console-consumer \
+     --bootstrap-server localhost:9092 \
+     --topic customer-created-events \
+     --from-beginning
+   ```
+
+4. **Ver logs del consumer**:
+   ```bash
+   docker logs bank-transaction-service | grep "CustomerCreated"
+   ```
+
+**Beneficios**:
+
+- ✅ **Desacoplamiento**: Servicios no dependen directamente entre sí
+- ✅ **Escalabilidad**: Procesamiento asíncrono de eventos
+- ✅ **Auditoría**: Todos los eventos quedan registrados
+- ✅ **Resiliencia**: Eventos persistentes ante fallos
+- ✅ **Event Sourcing**: Reconstrucción del estado desde eventos
+
 ### API Gateway (Puerto 8080)
 
 **Punto de entrada unificado** _(Opcional - Recomendado para producción)_
@@ -696,17 +824,21 @@ Basado en el dataset [bank_legacy_data](https://github.com/KariVillagran/bank_le
 
 ## 🛠️ Stack Tecnológico
 
-| Tecnología      | Versión  | Propósito                   |
-| --------------- | -------- | --------------------------- |
-| Java            | 21       | Lenguaje de programación    |
-| Spring Boot     | 3.5.0    | Framework de aplicación     |
-| Spring Cloud    | 2024.0.0 | Framework de microservicios |
-| Spring Security | 6.x      | Seguridad y autenticación   |
-| Resilience4j    | 2.x      | Patrones de resiliencia     |
-| PostgreSQL      | 15+      | Base de datos relacional    |
-| Docker          | Latest   | Contenedorización           |
-| Maven           | 3.8+     | Gestión de dependencias     |
-| Lombok          | 1.18.34  | Reducción de boilerplate    |
+| Tecnología      | Versión  | Propósito                     |
+| --------------- | -------- | ----------------------------- |
+| Java            | 21       | Lenguaje de programación      |
+| Spring Boot     | 3.5.0    | Framework de aplicación       |
+| Spring Cloud    | 2024.0.0 | Framework de microservicios   |
+| Spring Security | 6.x      | Seguridad y autenticación     |
+| Spring Kafka    | 3.3.6    | Integración con Apache Kafka  |
+| Resilience4j    | 2.x      | Patrones de resiliencia       |
+| Apache Kafka    | 3.9.1    | Event Streaming Platform      |
+| Zookeeper       | 7.5.0    | Coordinación de Kafka cluster |
+| Kafka UI        | Latest   | Interfaz web para Kafka       |
+| PostgreSQL      | 15+      | Base de datos relacional      |
+| Docker          | Latest   | Contenedorización             |
+| Maven           | 3.8+     | Gestión de dependencias       |
+| Lombok          | 1.18.34  | Reducción de boilerplate      |
 
 ---
 
@@ -767,14 +899,33 @@ cd transaction-service && mvn spring-boot:run
 
 Espera ~60 segundos para que los servicios se registren.
 
+**Servicios Core**:
+
 - **Config Server**: http://localhost:8888/actuator/health
 - **Eureka Dashboard**: http://localhost:8761
+- **API Gateway BFF**: https://localhost:8443/actuator/health
+
+**Microservicios**:
+
 - **Account Service**: http://localhost:8081/actuator/health
 - **Customer Service**: http://localhost:8082/actuator/health
 - **Transaction Service**: http://localhost:8083/actuator/health
-- **Swagger UI (Account)**: http://localhost:8081/swagger-ui.html
-- **Swagger UI (Customer)**: http://localhost:8082/swagger-ui.html
-- **Swagger UI (Transaction)**: http://localhost:8083/swagger-ui.html
+
+**Mensajería y UI**:
+
+- **Kafka UI**: http://localhost:8090 (Visualización de eventos)
+- **Zookeeper**: localhost:2181 (Coordinación Kafka)
+- **Kafka Broker**: localhost:9092 (Interno), localhost:29092 (Externo)
+
+**Base de Datos**:
+
+- **PostgreSQL**: localhost:5432 (bankdb, customerdb, transactiondb)
+
+**Swagger UI**:
+
+- http://localhost:8081/swagger-ui.html (Account)
+- http://localhost:8082/swagger-ui.html (Customer)
+- http://localhost:8083/swagger-ui.html (Transaction)
 
 ---
 
@@ -962,9 +1113,11 @@ curl -k -X GET https://localhost:8443/api/transactions/health \
 
 ## 🧪 Suite de Tests Automatizada
 
-El proyecto incluye un script completo de tests que valida **todos los 27 endpoints** a través del API Gateway BFF con HTTPS y JWT.
+El proyecto incluye **dos scripts completos de tests**:
 
-### Ejecutar Tests
+### 1. Test de Endpoints REST (test-all-endpoints.sh)
+
+Valida **todos los 27 endpoints** a través del API Gateway BFF con HTTPS y JWT.
 
 ```bash
 # Ejecutar suite completa de tests
@@ -972,6 +1125,45 @@ El proyecto incluye un script completo de tests que valida **todos los 27 endpoi
 
 # Ver logs en tiempo real
 ./test-all-endpoints.sh 2>&1 | tee test-results.log
+```
+
+### 2. Test de Mensajería Kafka (test-kafka.sh)
+
+Valida **Event-Driven Architecture** con Apache Kafka.
+
+```bash
+# Ejecutar tests de Kafka
+./test-kafka.sh
+
+# Resultado esperado:
+# ✅ 4 clientes creados
+# ✅ 4 eventos publicados a Kafka
+# ✅ 4 eventos consumidos correctamente
+# ✅ Kafka UI disponible en http://localhost:8090
+```
+
+**Qué valida**:
+
+- ✅ Contenedores Kafka, Zookeeper y Kafka UI están healthy
+- ✅ Topic `customer-created-events` creado con 3 particiones
+- ✅ Producer en Customer Service publica eventos
+- ✅ Consumer en Transaction Service procesa eventos
+- ✅ Kafka UI muestra mensajes en tiempo real
+
+**Verificación manual**:
+
+```bash
+# Ver mensajes en Kafka UI
+open http://localhost:8090
+
+# Ver eventos desde terminal
+docker exec -it bank-kafka kafka-console-consumer \
+  --bootstrap-server localhost:9092 \
+  --topic customer-created-events \
+  --from-beginning
+
+# Ver logs del consumer
+docker logs bank-transaction-service | grep "CustomerCreated"
 ```
 
 ### Resumen de Endpoints
