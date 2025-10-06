@@ -5,7 +5,11 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-[![---
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
+
+---
 
 ## ❓ Preguntas Frecuentes (FAQ)
 
@@ -337,10 +341,6 @@ customer-service:
 - [Resilience4j with Spring Boot](https://resilience4j.readme.io/docs/getting-started-3)
 - [Docker Compose for Microservices](https://docs.docker.com/compose/gettingstarted/)
 
----ense](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
-
 ---
 
 ## 📑 Tabla de Contenidos
@@ -388,25 +388,25 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 
 ### Diagrama de Componentes
 
-\`\`\`
+```
 ┌─────────────────────────────────────────────────────────┐
-│ API Gateway (8080) │
-│ Autenticación JWT + Enrutamiento │
+│              API Gateway (8080)                          │
+│         Autenticación JWT + Enrutamiento                │
 └───────────────────────┬─────────────────────────────────┘
-│
-┌───────────────┼───────────────┐
-│ │ │
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
 ┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
-│Config Server │ │ Eureka │ │ Account │
-│ (8888) │ │ Server │ │ Service │
-│ │ │ (8761) │ │ (8081) │
+│Config Server │ │   Eureka   │ │  Account   │
+│   (8888)     │ │   Server   │ │  Service   │
+│              │ │   (8761)   │ │   (8081)   │
 └──────────────┘ └────────────┘ └─────┬──────┘
-│
-┌──────▼──────┐
-│ PostgreSQL │
-│ (5432) │
-└─────────────┘
-\`\`\`
+                                       │
+                                ┌──────▼──────┐
+                                │ PostgreSQL  │
+                                │   (5432)    │
+                                └─────────────┘
+```
 
 ### Principios Arquitectónicos
 
