@@ -1,6 +1,9 @@
 spring:
   application:
     name: eureka-server
+  cloud:
+    compatibility-verifier:
+      enabled: false
 
 server:
   port: 8761

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/legacy")
+@RequestMapping("/api/accounts/legacy")
 @Tag(name = "Legacy Data", description = "API para datos migrados del sistema legacy")
 public class LegacyDataController {
 

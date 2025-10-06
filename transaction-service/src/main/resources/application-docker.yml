@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: transaction-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}
+  spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/transactiondb
+    username: bank
+    password: bankpass123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8083
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: transaction-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.duoc.bank: INFO

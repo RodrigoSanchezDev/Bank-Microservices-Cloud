@@ -1,0 +1,40 @@
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: /app/keystore/bank-bff.p12
+    key-store-password: bankbff123
+    key-store-type: PKCS12
+    key-alias: bank-bff
+
+spring:
+  application:
+    name: api-gateway-bff
+  cloud:
+    gateway:
+      httpclient:
+        ssl:
+          useInsecureTrustManager: true
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+    secure-port-enabled: false # Cambio temporal a HTTP
+    non-secure-port-enabled: true # Habilitar puerto no seguro
+    non-secure-port: 8080 # Puerto HTTP
+    hostname: api-gateway-bff
+
+logging:
+  level:
+    root: INFO
+    com.duoc.bank.bff: DEBUG

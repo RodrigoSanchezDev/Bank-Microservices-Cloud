@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/customerdb
+    username: postgres
+    password: postgres
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

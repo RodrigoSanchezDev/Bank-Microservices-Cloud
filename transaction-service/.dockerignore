@@ -1,0 +1,3 @@
+# Ignorar todo excepto el JAR
+*
+!target/*.jar

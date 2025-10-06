@@ -5,16 +5,17 @@ services:
     container_name: bank-postgres
     environment:
       POSTGRES_DB: bankdb
-      POSTGRES_USER: bankuser
+      POSTGRES_USER: bank
       POSTGRES_PASSWORD: bankpass123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bankuser -d bankdb"]
+      test: ["CMD-SHELL", "pg_isready -U bank -d bankdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +31,11 @@ services:
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8888/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8888/actuator/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -51,11 +56,40 @@ services:
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 90s
+
+  # API Gateway BFF (Backend for Frontend)
+  api-gateway-bff:
+    build: ./api-gateway-bff
+    container_name: bank-api-gateway-bff
+    ports:
+      - "8443:8443"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - bank-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verify-certificate --no-verbose --tries=1 --spider https://localhost:8443/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 120s
 
   # Account Service (Microservicio de Cuentas)
   account-service:
@@ -70,7 +104,7 @@ services:
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=bankdb
-      - DB_USER=bankuser
+      - DB_USER=bank
       - DB_PASSWORD=bankpass123
     depends_on:
       postgres:
@@ -80,7 +114,79 @@ services:
     networks:
       - bank-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 120s
+
+  # Customer Service (Microservicio de Clientes)
+  customer-service:
+    build: ./customer-service
+    container_name: bank-customer-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_APPLICATION_NAME=customer-service
+      - CONFIG_SERVER_URL=http://config-server:8888
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=customerdb
+      - DB_USER=bank
+      - DB_PASSWORD=bankpass123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - bank-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 120s
+
+  # Transaction Service (Microservicio de Transacciones)
+  transaction-service:
+    build: ./transaction-service
+    container_name: bank-transaction-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_APPLICATION_NAME=transaction-service
+      - CONFIG_SERVER_URL=http://config-server:8888
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=transactiondb
+      - DB_USER=bank
+      - DB_PASSWORD=bankpass123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - bank-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 15

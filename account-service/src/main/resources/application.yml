@@ -1,9 +1,9 @@
 spring:
   application:
     name: account-service
-  config:
-    import: optional:configserver:http://localhost:8888
   cloud:
+    compatibility-verifier:
+      enabled: false
     config:
       fail-fast: false
       retry:
@@ -11,5 +11,7 @@ spring:
         initial-interval: 1000
         max-interval: 2000
         multiplier: 1.1
+  config:
+    import: optional:configserver:http://localhost:8888
   profiles:
     active: default

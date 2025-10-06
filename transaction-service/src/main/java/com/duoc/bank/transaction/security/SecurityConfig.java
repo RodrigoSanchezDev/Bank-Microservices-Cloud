@@ -1,7 +1,8 @@
-package com.duoc.bank.account.security;
+package com.duoc.bank.transaction.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
-// @EnableMethodSecurity - Deshabilitado porque la autenticación se maneja en el BFF
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean

@@ -23,7 +23,10 @@
     <modules>
         <module>config-server</module>
         <module>eureka-server</module>
+        <module>api-gateway-bff</module>
         <module>account-service</module>
+        <module>customer-service</module>
+        <module>transaction-service</module>
     </modules>
 
     <properties>

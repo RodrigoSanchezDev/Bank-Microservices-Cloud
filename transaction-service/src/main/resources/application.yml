@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: transaction-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/transactiondb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+server:
+  port: 8083
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      transactionService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+
+  retry:
+    instances:
+      transactionService:
+        maxAttempts: 3
+        waitDuration: 1000
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+
+  ratelimiter:
+    instances:
+      transactionService:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0s
+
+  timelimiter:
+    instances:
+      transactionService:
+        timeoutDuration: 3s
+
+jwt:
+  secret: MySecretKeyForJWTTokenGenerationAndValidation2024
+  expiration: 86400000
+
+logging:
+  level:
+    com.duoc.bank.transaction: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

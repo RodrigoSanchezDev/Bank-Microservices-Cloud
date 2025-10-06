@@ -7,7 +7,7 @@ spring:
     name: account-service
   datasource:
     url: jdbc:postgresql://localhost:5432/bankdb
-    username: bankuser
+    username: bank
     password: bankpass123
     driver-class-name: org.postgresql.Driver
   jpa:

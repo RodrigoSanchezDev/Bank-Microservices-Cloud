@@ -2,12 +2,23 @@
 
 > Sistema bancario distribuido de alto rendimiento construido con arquitectura de microservicios
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-brightgreen.svg)](https://spring.io/projects/spring-- ✅ Arquitectura de Microservicios
+
+- ✅ Config Server (Centralizado)
+- ✅ Eureka Discovery Service
+- ✅ Account Service (CRUD + CSV Migration)
+- ✅ Customer Service (Gestión de Clientes)
+- ✅ Transaction Service (Gestión de Transacciones)
+- ✅ Patrones de Resiliencia (Resilience4j)
+- ✅ Autenticación JWT
+- ✅ Contenedorización Docker
+- ✅ Spring Boot 3.5.0
+- ✅ Spring Cloud 2024.0.0
+- ✅ Java 21pring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-blue.svg)](https://spring.io/projects/spring-cloud)
+  [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
+  [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+  [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+  [![Resilience4j](https://img.shields.io/badge/Resilience4j-2.x-green.svg)](https://resilience4j.readme.io/)
 
 ---
 
@@ -156,6 +167,110 @@ customer-service:
 </details>
 
 <details>
+<summary><strong>¿Cómo funciona el API Gateway BFF con HTTPS y JWT?</strong></summary>
+
+**Arquitectura del Gateway**:
+
+El **API Gateway BFF** (Backend For Frontend) centraliza todas las peticiones usando **Spring Cloud Gateway Reactive**:
+
+- **Puerto HTTPS**: 8443 (certificado SSL auto-firmado)
+- **Autenticación**: JWT centralizada mediante `GlobalFilter` (sin Spring Security)
+- **Enrutamiento**: Basado en paths con Service Discovery vía Eureka
+- **Resiliencia**: Circuit Breaker integrado en cada ruta
+
+**Flujo de Autenticación**:
+
+1. **Login** (endpoint público):
+
+   ```bash
+   curl -k -X POST https://localhost:8443/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "admin", "password": "admin123"}'
+   ```
+
+2. **Respuesta con Token**:
+
+   ```json
+   {
+     "token": "eyJhbGciOiJIUzI1NiJ9...",
+     "username": "admin"
+   }
+   ```
+
+3. **Uso del Token**:
+   ```bash
+   curl -k -X GET https://localhost:8443/api/customers \
+     -H "Authorization: Bearer {token}"
+   ```
+
+**Componentes del Gateway**:
+
+- **`JwtAuthenticationFilter`** (GlobalFilter con orden -100):
+
+  - Valida tokens JWT en cada petición
+  - Rechaza con 401 si el token es inválido
+  - Agrega header `X-User-Id` con el username extraído
+  - Rutas públicas: `/api/auth/login`, `/actuator/health`, `/swagger-ui`
+
+- **`JwtTokenUtil`**:
+
+  - Genera tokens con expiración de 24 horas
+  - Valida firma y expiración
+  - Extrae claims (username, roles)
+  - Secret key: `YourSuperSecretKeyForJWTTokenGeneration123456789`
+
+- **`AuthController`**:
+  - Login con usuarios hardcodeados:
+    - `admin` / `admin123` (roles: ADMIN, USER)
+    - `user` / `user123` (rol: USER)
+
+**Configuración de Rutas**:
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: account-service-route
+          uri: lb://account-service
+          predicates:
+            - Path=/api/accounts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: accountServiceCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        - id: customer-service-route
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+
+        - id: transaction-service-route
+          uri: lb://transaction-service
+          predicates:
+            - Path=/api/transactions/**
+```
+
+**Certificado SSL**:
+
+- Keystore: `classpath:keystore/bank-bff.p12`
+- Password: `bankbff123`
+- Alias: `bank-bff`
+- Tipo: PKCS12
+
+**Ventajas**:
+
+- ✅ Punto único de entrada (Single Entry Point)
+- ✅ Autenticación centralizada (un solo lugar para JWT)
+- ✅ HTTPS/TLS para todas las comunicaciones externas
+- ✅ Service Discovery automático con Eureka
+- ✅ Circuit Breaker para resiliencia
+- ✅ Microservicios sin lógica de autenticación (confianza en BFF)
+
+</details>
+
+<details>
 <summary><strong>¿Cómo funciona la autenticación JWT?</strong></summary>
 
 **Flujo de Autenticación**:
@@ -242,23 +357,23 @@ customer-service:
 ### 📌 v1.0.0 - Sistema Base (Actual)
 
 - ✅ Arquitectura de Microservicios
+- ✅ **API Gateway (BFF) con Spring Cloud Gateway**
+- ✅ **HTTPS/TLS en puerto 8443 (certificado SSL)**
+- ✅ **JWT Authentication centralizado en BFF (GlobalFilter)**
 - ✅ Config Server (Centralizado)
 - ✅ Eureka Discovery Service
-- ✅ Account Service (CRUD + CSV Migration)
+- ✅ Account Service (CRUD + CSV Migration + 11 endpoints legacy)
+- ✅ Customer Service (CRUD completo - 8 endpoints)
+- ✅ Transaction Service (CRUD completo - 8 endpoints)
 - ✅ Patrones de Resiliencia (Resilience4j)
-- ✅ Autenticación JWT
+- ✅ PostgreSQL (3 bases de datos independientes)
 - ✅ Containerización Docker
+- ✅ **Suite de Tests (test-all-endpoints.sh - 100% funcional)**
 - ✅ Spring Boot 3.5.0
 - ✅ Spring Cloud 2024.0.0
 - ✅ Java 21
 
 ### 🚀 v1.1.0 - Mejoras de Infraestructura (Próximo)
-
-- 🔄 **API Gateway (Spring Cloud Gateway)**
-
-  - Enrutamiento centralizado
-  - Rate limiting global
-  - Autenticación unificada
 
 - 🔄 **Tracing Distribuido**
 
@@ -374,13 +489,19 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 ### Características Principales
 
 - ✅ **Arquitectura de Microservicios** escalable y distribuida
+- ✅ **API Gateway (BFF)** con Spring Cloud Gateway Reactive
+- ✅ **HTTPS/TLS** con certificado SSL auto-firmado (puerto 8443)
+- ✅ **Autenticación JWT Centralizada** en API Gateway (sin Spring Security)
+- ✅ **3 Microservicios de Negocio** (Account, Customer, Transaction)
+- ✅ **27 Endpoints Funcionales** (11 Account + 8 Customer + 8 Transaction)
 - ✅ **Configuración Centralizada** con Spring Cloud Config
 - ✅ **Service Discovery** con Netflix Eureka
-- ✅ **Autenticación JWT** y seguridad distribuida
 - ✅ **Patrones de Resiliencia** (Circuit Breaker, Retry, Rate Limiting)
-- ✅ **Contenedorización** con Docker
+- ✅ **Contenedorización** con Docker y Docker Compose
 - ✅ **API RESTful** documentada con Swagger/OpenAPI
 - ✅ **Monitoreo** con Spring Actuator
+- ✅ **Bases de Datos Independientes** por microservicio
+- ✅ **Suite de Tests Automatizada** (100% endpoints funcionando)
 
 ---
 
@@ -394,18 +515,27 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 │         Autenticación JWT + Enrutamiento                │
 └───────────────────────┬─────────────────────────────────┘
                         │
-        ┌───────────────┼───────────────┐
-        │               │               │
-┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
-│Config Server │ │   Eureka   │ │  Account   │
-│   (8888)     │ │   Server   │ │  Service   │
-│              │ │   (8761)   │ │   (8081)   │
-└──────────────┘ └────────────┘ └─────┬──────┘
-                                       │
-                                ┌──────▼──────┐
-                                │ PostgreSQL  │
-                                │   (5432)    │
-                                └─────────────┘
+        ┌───────────────┴───────────────────────────┐
+        │                                           │
+┌───────▼──────┐                          ┌────────▼────────┐
+│Config Server │                          │ Eureka Server   │
+│   (8888)     │                          │    (8761)       │
+└──────────────┘                          └────────┬────────┘
+                                                   │
+                        ┌──────────────────────────┼──────────────┐
+                        │                          │              │
+                 ┌──────▼──────┐         ┌────────▼──────┐ ┌────▼────────┐
+                 │   Account   │         │   Customer    │ │Transaction  │
+                 │   Service   │         │    Service    │ │   Service   │
+                 │   (8081)    │         │    (8082)     │ │   (8083)    │
+                 └──────┬──────┘         └───────┬───────┘ └─────┬───────┘
+                        │                        │               │
+                        └────────────────────────┼───────────────┘
+                                                 │
+                                          ┌──────▼──────┐
+                                          │ PostgreSQL  │
+                                          │   (5432)    │
+                                          └─────────────┘
 ```
 
 ### Principios Arquitectónicos
@@ -454,8 +584,68 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 
 - Circuit Breaker (protección contra fallos en cascada)
 - Retry (reintentos automáticos)
-- Rate Limiter (control de tráfico: 10 req/min)
+- Rate Limiter (control de tráfico: 10 req/s)
 - Time Limiter (timeout en operaciones)
+
+### Customer Service (Puerto 8082)
+
+**Microservicio de gestión de clientes**
+
+**Características**:
+
+- API RESTful para gestión completa de clientes
+- Validación de RUT único
+- Estados de cliente (ACTIVE, INACTIVE, SUSPENDED, BLOCKED)
+- Autenticación y autorización JWT
+- Integración con PostgreSQL mediante JPA
+- Métricas y health checks con Actuator
+
+**Endpoints Principales**:
+
+- `GET /api/customers` - Listar todos los clientes
+- `GET /api/customers/{id}` - Obtener cliente por ID
+- `GET /api/customers/rut/{rut}` - Buscar por RUT
+- `GET /api/customers/email/{email}` - Buscar por email
+- `POST /api/customers` - Crear cliente
+- `PUT /api/customers/{id}` - Actualizar cliente
+- `DELETE /api/customers/{id}` - Eliminar cliente
+
+**Patrones de Resiliencia**:
+
+- Circuit Breaker (protección contra fallos en cascada)
+- Retry (reintentos automáticos con backoff exponencial)
+- Rate Limiter (control de tráfico: 10 req/s)
+- Time Limiter (timeout de 3 segundos)
+
+### Transaction Service (Puerto 8083)
+
+**Microservicio de gestión de transacciones bancarias**
+
+**Características**:
+
+- API RESTful para procesamiento de transacciones
+- Tipos: DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT, FEE
+- Estados: PENDING, COMPLETED, FAILED, CANCELLED, REVERSED
+- Autenticación y autorización JWT
+- Integración con PostgreSQL mediante JPA
+- Métricas y health checks con Actuator
+
+**Endpoints Principales**:
+
+- `GET /api/transactions` - Listar todas las transacciones
+- `GET /api/transactions/{id}` - Obtener transacción por ID
+- `GET /api/transactions/account/{accountId}` - Por cuenta
+- `GET /api/transactions/customer/{customerId}` - Por cliente
+- `POST /api/transactions` - Crear transacción
+- `PUT /api/transactions/{id}` - Actualizar transacción
+- `DELETE /api/transactions/{id}` - Eliminar transacción
+
+**Patrones de Resiliencia**:
+
+- Circuit Breaker (protección contra fallos en cascada)
+- Retry (reintentos automáticos con backoff exponencial)
+- Rate Limiter (control de tráfico: 10 req/s)
+- Time Limiter (timeout de 3 segundos)
 
 ### API Gateway (Puerto 8080)
 
@@ -477,24 +667,37 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 - Gestión completa de cuentas
 - Tipos: Ahorros, Corriente, Nómina
 - Control de saldos y estados
+- Base de datos: `bankdb`
+
+**Clientes** (`customers`)
+
+- Gestión de información de clientes
+- Validación de RUT único
+- Email único por cliente
+- Estados: ACTIVE, INACTIVE, SUSPENDED, BLOCKED
+- Base de datos: `customerdb`
 
 **Transacciones** (`transactions`)
 
 - Registro de movimientos financieros
-- Tipos: Depósito, Retiro, Transferencia
-- Validación de reglas de negocio
+- Tipos: DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT, FEE
+- Estados: PENDING, COMPLETED, FAILED, CANCELLED, REVERSED
+- Relación con cuentas y clientes
+- Base de datos: `transactiondb`
 
 **Intereses** (`interests`)
 
 - Cálculo automático de intereses
 - Aplicación mensual según tipo de cuenta
 - Historial de aplicaciones
+- Base de datos: `bankdb`
 
 **Usuarios** (`users`)
 
 - Autenticación y autorización
 - Roles: ADMIN, USER
 - Gestión de credenciales JWT
+- Base de datos: compartida
 
 ### Referencia de Datos Legacy
 
@@ -563,6 +766,12 @@ cd eureka-server && mvn spring-boot:run
 
 # 4. Iniciar Account Service (Terminal 3)
 cd account-service && mvn spring-boot:run
+
+# 5. Iniciar Customer Service (Terminal 4)
+cd customer-service && mvn spring-boot:run
+
+# 6. Iniciar Transaction Service (Terminal 5)
+cd transaction-service && mvn spring-boot:run
 ```
 
 ### Verificación
@@ -572,7 +781,11 @@ Espera ~60 segundos para que los servicios se registren.
 - **Config Server**: http://localhost:8888/actuator/health
 - **Eureka Dashboard**: http://localhost:8761
 - **Account Service**: http://localhost:8081/actuator/health
-- **Swagger UI**: http://localhost:8081/swagger-ui.html
+- **Customer Service**: http://localhost:8082/actuator/health
+- **Transaction Service**: http://localhost:8083/actuator/health
+- **Swagger UI (Account)**: http://localhost:8081/swagger-ui.html
+- **Swagger UI (Customer)**: http://localhost:8082/swagger-ui.html
+- **Swagger UI (Transaction)**: http://localhost:8083/swagger-ui.html
 
 ---
 
@@ -594,13 +807,32 @@ http://localhost:8888/account-service/default
 
 **Autenticación (Obtener JWT)**
 
-```bash
-POST http://localhost:8081/api/auth/login
-Content-Type: application/json
+> ⚠️ **IMPORTANTE**: Todos los endpoints ahora están expuestos a través del **API Gateway BFF** en puerto **8443 (HTTPS)**
 
+```bash
+# Login - Obtener JWT (usuario admin)
+curl -k -X POST https://localhost:8443/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
+
+# Login - Obtener JWT (usuario regular)
+curl -k -X POST https://localhost:8443/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "user",
+    "password": "user123"
+  }'
+```
+
+**Respuesta**:
+
+```json
 {
-  "username": "admin",
-  "password": "admin123"
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "username": "admin"
 }
 ```
 
@@ -608,37 +840,241 @@ Content-Type: application/json
 
 ```bash
 # Listar cuentas
-GET http://localhost:8081/api/accounts
-Authorization: Bearer {token}
+curl -k -X GET https://localhost:8443/api/accounts \
+  -H "Authorization: Bearer {token}"
 
 # Crear cuenta
-POST http://localhost:8081/api/accounts
+curl -k -X POST https://localhost:8443/api/accounts \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountNumber": "1234567890",
+    "accountHolder": "Juan Pérez",
+    "balance": 1000.00,
+    "accountType": "SAVINGS"
+  }'
+
+# Obtener cuenta por ID
+curl -k -X GET https://localhost:8443/api/accounts/{id} \
+  -H "Authorization: Bearer {token}"
+
+# Account Legacy Endpoints (11 endpoints)
+curl -k -X GET https://localhost:8443/api/accounts/legacy/transacciones \
+  -H "Authorization: Bearer {token}"
+
+curl -k -X GET https://localhost:8443/api/accounts/legacy/intereses \
+  -H "Authorization: Bearer {token}"
+
+curl -k -X GET https://localhost:8443/api/accounts/legacy/cuentas-anuales \
+  -H "Authorization: Bearer {token}"
+
+curl -k -X GET https://localhost:8443/api/accounts/legacy/resumen-general \
+  -H "Authorization: Bearer {token}"
+```
+
+### Customer Service API
+
+**Operaciones de Clientes (8 endpoints - requiere JWT)**
+
+```bash
+# Listar todos los clientes
+curl -k -X GET https://localhost:8443/api/customers \
+  -H "Authorization: Bearer {token}"
+
+# Crear cliente
+curl -k -X POST https://localhost:8443/api/customers \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rut": "12345678-9",
+    "firstName": "Juan",
+    "lastName": "Pérez",
+    "email": "juan.perez@example.com",
+    "phone": "+56912345678",
+    "address": "Santiago, Chile",
+    "status": "ACTIVE"
+  }'
+
+# Buscar por RUT
+curl -k -X GET https://localhost:8443/api/customers/rut/12345678-9 \
+  -H "Authorization: Bearer {token}"
+
+# Buscar por email
+curl -k -X GET https://localhost:8443/api/customers/email/juan.perez@example.com \
+  -H "Authorization: Bearer {token}"
+
+# Actualizar cliente
+curl -k -X PUT https://localhost:8443/api/customers/{id} \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Juan Carlos",
+    "lastName": "Pérez González",
+    "status": "ACTIVE"
+  }'
+
+# Eliminar cliente
+curl -k -X DELETE https://localhost:8443/api/customers/{id} \
+  -H "Authorization: Bearer {token}"
+
+# Health check
+curl -k -X GET https://localhost:8443/api/customers/health \
+  -H "Authorization: Bearer {token}"
+```
+
+### Transaction Service API
+
+**Operaciones de Transacciones (8 endpoints - requiere JWT)**
+
+```bash
+# Listar todas las transacciones
+curl -k -X GET https://localhost:8443/api/transactions \
+  -H "Authorization: Bearer {token}"
+
+# Crear transacción
+curl -k -X POST https://localhost:8443/api/transactions \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountId": 1,
+    "customerId": 1,
+    "type": "DEPOSIT",
+    "amount": 50000.00,
+    "description": "Depósito inicial",
+    "status": "PENDING"
+  }'
+
+# Buscar transacciones por cuenta
+curl -k -X GET https://localhost:8443/api/transactions/account/{accountId} \
+  -H "Authorization: Bearer {token}"
+
+# Buscar transacciones por cliente
+curl -k -X GET https://localhost:8443/api/transactions/customer/{customerId} \
+  -H "Authorization: Bearer {token}"
+
+# Actualizar transacción
+curl -k -X PUT https://localhost:8443/api/transactions/{id} \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "COMPLETED"
+  }'
+
+# Eliminar transacción
+curl -k -X DELETE https://localhost:8443/api/transactions/{id} \
+  -H "Authorization: Bearer {token}"
+
+# Health check
+curl -k -X GET https://localhost:8443/api/transactions/health \
+  -H "Authorization: Bearer {token}"
+```
+
+---
+
+## 🧪 Suite de Tests Automatizada
+
+El proyecto incluye un script completo de tests que valida **todos los 27 endpoints** a través del API Gateway BFF con HTTPS y JWT.
+
+### Ejecutar Tests
+
+```bash
+# Ejecutar suite completa de tests
+./test-all-endpoints.sh
+
+# Ver logs en tiempo real
+./test-all-endpoints.sh 2>&1 | tee test-results.log
+```
+
+### Resumen de Endpoints
+
+**Account Service (11 endpoints legacy)**:
+
+- ✅ GET `/api/accounts/legacy/transacciones` - Lista transacciones válidas/inválidas
+- ✅ GET `/api/accounts/legacy/transacciones-validas` - Solo transacciones válidas
+- ✅ GET `/api/accounts/legacy/transacciones-invalidas` - Solo transacciones inválidas
+- ✅ GET `/api/accounts/legacy/intereses` - Cálculos de intereses
+- ✅ GET `/api/accounts/legacy/intereses-validos` - Intereses válidos
+- ✅ GET `/api/accounts/legacy/intereses-invalidos` - Intereses inválidos
+- ✅ GET `/api/accounts/legacy/cuentas-anuales` - Cuentas anuales
+- ✅ GET `/api/accounts/legacy/cuentas-validas` - Cuentas válidas
+- ✅ GET `/api/accounts/legacy/cuentas-invalidas` - Cuentas inválidas
+- ✅ GET `/api/accounts/legacy/resumen-general` - Resumen completo
+- ✅ GET `/api/accounts/legacy/health` - Health check
+
+**Customer Service (8 endpoints CRUD)**:
+
+- ✅ GET `/api/customers` - Listar todos los clientes
+- ✅ GET `/api/customers/{id}` - Obtener cliente por ID
+- ✅ GET `/api/customers/rut/{rut}` - Buscar por RUT
+- ✅ GET `/api/customers/email/{email}` - Buscar por email
+- ✅ POST `/api/customers` - Crear cliente
+- ✅ PUT `/api/customers/{id}` - Actualizar cliente
+- ✅ DELETE `/api/customers/{id}` - Eliminar cliente
+- ✅ GET `/api/customers/health` - Health check
+
+**Transaction Service (8 endpoints CRUD)**:
+
+- ✅ GET `/api/transactions` - Listar todas las transacciones
+- ✅ GET `/api/transactions/{id}` - Obtener transacción por ID
+- ✅ GET `/api/transactions/account/{accountId}` - Transacciones por cuenta
+- ✅ GET `/api/transactions/customer/{customerId}` - Transacciones por cliente
+- ✅ POST `/api/transactions` - Crear transacción
+- ✅ PUT `/api/transactions/{id}` - Actualizar transacción
+- ✅ DELETE `/api/transactions/{id}` - Eliminar transacción
+- ✅ GET `/api/transactions/health` - Health check
+
+### Resultado Esperado
+
+```
+╔═══════════════════════════════════════════════════════╗
+║                  RESUMEN DE TESTS                     ║
+╚═══════════════════════════════════════════════════════╝
+
+Total de tests ejecutados: 17
+Tests exitosos: 17
+Tests fallidos: 0
+
+✓ ¡Todos los tests pasaron exitosamente!
+✓ BFF HTTPS funcionando correctamente
+✓ JWT authentication funcionando
+✓ Routing a microservicios funcionando
+
+ℹ ENDPOINTS TOTALES DISPONIBLES:
+  - Account Service (Legacy): 11 endpoints
+  - Customer Service (CRUD): 8 endpoints
+  - Transaction Service (CRUD): 8 endpoints
+  Total: 27 endpoints expuestos a través del BFF
+PUT http://localhost:8083/api/transactions/{id}
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "accountNumber": "1234567890",
-  "accountHolder": "Juan Pérez",
-  "balance": 1000.00,
-  "accountType": "SAVINGS"
+  "status": "COMPLETED",
+  "description": "Transacción completada exitosamente"
 }
-
-# Obtener cuenta por ID
-GET http://localhost:8081/api/accounts/{id}
-Authorization: Bearer {token}
 ```
 
 ### Health & Monitoreo
 
 ```bash
-# Health check
+# Health check - Account Service
 GET http://localhost:8081/actuator/health
+
+# Health check - Customer Service
+GET http://localhost:8082/actuator/health
+
+# Health check - Transaction Service
+GET http://localhost:8083/actuator/health
 
 # Circuit Breaker estado
 GET http://localhost:8081/actuator/health/circuitbreakers
+GET http://localhost:8082/actuator/health/circuitbreakers
+GET http://localhost:8083/actuator/health/circuitbreakers
 
 # Métricas
 GET http://localhost:8081/actuator/metrics
+GET http://localhost:8082/actuator/metrics
+GET http://localhost:8083/actuator/metrics
 ```
 
 ---
@@ -751,6 +1187,8 @@ Importa `postman-collection.json` para probar todos los endpoints.
 
 ### Spring Actuator
 
+**Account Service**:
+
 ```bash
 # Health check
 curl http://localhost:8081/actuator/health
@@ -760,6 +1198,47 @@ curl http://localhost:8081/actuator/metrics
 
 # Info
 curl http://localhost:8081/actuator/info
+
+# Circuit Breaker
+curl http://localhost:8081/actuator/health/circuitbreakers
+```
+
+**Customer Service**:
+
+```bash
+# Health check
+curl http://localhost:8082/actuator/health
+
+# Métricas
+curl http://localhost:8082/actuator/metrics
+
+# Circuit Breaker
+curl http://localhost:8082/actuator/health/circuitbreakers
+```
+
+**Transaction Service**:
+
+```bash
+# Health check
+curl http://localhost:8083/actuator/health
+
+# Métricas
+curl http://localhost:8083/actuator/metrics
+
+# Circuit Breaker
+curl http://localhost:8083/actuator/health/circuitbreakers
+```
+
+### Eureka Dashboard
+
+```bash
+# Ver todos los servicios registrados
+curl http://localhost:8761/eureka/apps
+
+# Ver servicio específico
+curl http://localhost:8761/eureka/apps/ACCOUNT-SERVICE
+curl http://localhost:8761/eureka/apps/CUSTOMER-SERVICE
+curl http://localhost:8761/eureka/apps/TRANSACTION-SERVICE
 ```
 
 ---
@@ -769,6 +1248,11 @@ curl http://localhost:8081/actuator/info
 ```
 bank-microservices-cloud/
 ├── config-server/              # Configuración centralizada
+│   └── src/main/resources/
+│       └── config-repo/        # Configuraciones de servicios
+│           ├── account-service.yml
+│           ├── customer-service.yml
+│           └── transaction-service.yml
 ├── eureka-server/              # Service Discovery
 ├── account-service/            # Microservicio de cuentas
 │   ├── src/main/java/
@@ -783,6 +1267,26 @@ bank-microservices-cloud/
 │   └── src/main/resources/
 │       ├── application.yml
 │       └── data/               # Datos legacy CSV
+├── customer-service/           # Microservicio de clientes
+│   ├── src/main/java/
+│   │   └── com/duoc/bank/customer/
+│   │       ├── controller/     # REST Controllers
+│   │       ├── model/          # Entidad Customer
+│   │       ├── repository/     # CustomerRepository
+│   │       ├── security/       # JWT Security
+│   │       └── service/        # CustomerService
+│   └── src/main/resources/
+│       └── application.yml
+├── transaction-service/        # Microservicio de transacciones
+│   ├── src/main/java/
+│   │   └── com/duoc/bank/transaction/
+│   │       ├── controller/     # REST Controllers
+│   │       ├── model/          # Entidad Transaction
+│   │       ├── repository/     # TransactionRepository
+│   │       ├── security/       # JWT Security
+│   │       └── service/        # TransactionService
+│   └── src/main/resources/
+│       └── application.yml
 ├── docker-compose.yml
 ├── pom.xml
 ├── LICENSE
@@ -830,6 +1334,28 @@ EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
 ```bash
 SPRING_PROFILES_ACTIVE=prod
 SPRING_DATASOURCE_URL=jdbc:postgresql://prod-db.yourdomain.com:5432/bankdb
+SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+JWT_SECRET=${JWT_SECRET_KEY}
+EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-prod.yourdomain.com:8761/eureka/
+```
+
+**Customer Service**:
+
+```bash
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=jdbc:postgresql://prod-db.yourdomain.com:5432/customerdb
+SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+JWT_SECRET=${JWT_SECRET_KEY}
+EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-prod.yourdomain.com:8761/eureka/
+```
+
+**Transaction Service**:
+
+```bash
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=jdbc:postgresql://prod-db.yourdomain.com:5432/transactiondb
 SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
 SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
 JWT_SECRET=${JWT_SECRET_KEY}
@@ -927,6 +1453,15 @@ services:
 ```bash
 # Escalar Account Service a 3 instancias
 docker-compose up -d --scale account-service=3
+
+# Escalar Customer Service a 2 instancias
+docker-compose up -d --scale customer-service=2
+
+# Escalar Transaction Service a 3 instancias
+docker-compose up -d --scale transaction-service=3
+
+# Escalar todos los servicios
+docker-compose up -d --scale account-service=3 --scale customer-service=2 --scale transaction-service=3
 ```
 
 **Kubernetes (futuro)**:
