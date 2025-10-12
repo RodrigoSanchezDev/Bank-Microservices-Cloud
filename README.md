@@ -652,6 +652,7 @@ _Suite de pruebas automatizadas de Kafka con 8/8 tests exitosos_
 - [Modelo de Datos](#-modelo-de-datos)
 - [Stack Tecnológico](#️-stack-tecnológico)
 - [Inicio Rápido](#-inicio-rápido)
+- [Despliegue en AWS EC2](#-despliegue-en-aws-ec2)
 - [Seguridad](#-seguridad)
 - [Patrones de Resiliencia](#️-patrones-de-resiliencia)
 - [Testing y Calidad](#-testing-y-calidad)
@@ -1526,6 +1527,442 @@ GET http://localhost:8081/actuator/metrics
 GET http://localhost:8082/actuator/metrics
 GET http://localhost:8083/actuator/metrics
 ```
+
+---
+
+## ☁️ Despliegue en AWS EC2
+
+Esta sección documenta el proceso completo de despliegue del proyecto en una instancia EC2 de AWS.
+
+### 📋 Requisitos Previos
+
+- **Instancia EC2**: Amazon Linux 2023, t2.large (8GB RAM recomendado)
+- **Acceso SSH**: Llave .pem o .ppk convertida
+- **Security Groups**: Configurados con los puertos necesarios
+
+### 🔧 Preparación del Entorno EC2
+
+#### 1. Conversión de Llave SSH (macOS/Linux)
+
+Si tienes una llave `.ppk` de PuTTY, necesitas convertirla:
+
+```bash
+# Instalar PuTTY tools (macOS)
+brew install putty
+
+# Convertir .ppk a .pem
+puttygen backend3.ppk -O private-openssh -o backend3.pem
+
+# Configurar permisos
+chmod 400 backend3.pem
+
+# Probar conexión
+ssh -i backend3.pem ec2-user@<TU-IP-PUBLICA>
+```
+
+#### 2. Configuración Inicial del Sistema
+
+Una vez conectado a EC2, actualizar el sistema:
+
+```bash
+# Actualizar paquetes
+sudo dnf update -y
+
+# Instalar utilidades
+sudo dnf install -y git vim htop wget
+
+# Verificar espacio en disco
+df -h
+```
+
+#### 3. Instalación de Docker
+
+```bash
+# Instalar Docker
+sudo dnf install -y docker
+
+# Habilitar y arrancar Docker
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Agregar usuario al grupo docker
+sudo usermod -aG docker ec2-user
+
+# Verificar instalación
+docker --version
+```
+
+#### 4. Instalación de Docker Compose
+
+```bash
+# Descargar Docker Compose v2.31.0
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.31.0/docker-compose-linux-x86_64" \
+  -o /usr/local/bin/docker-compose
+
+# Dar permisos de ejecución
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verificar instalación
+docker-compose --version
+```
+
+#### 5. Instalación de Java 21
+
+```bash
+# Instalar Amazon Corretto 21
+sudo dnf install -y java-21-amazon-corretto java-21-amazon-corretto-devel
+
+# Verificar instalación
+java -version
+```
+
+#### 6. Instalación de Maven
+
+```bash
+# Instalar Maven y Java 17 (requerido por Maven)
+sudo dnf install -y maven java-17-amazon-corretto
+
+# Verificar instalación
+mvn -version
+```
+
+#### 7. Crear Estructura de Directorios
+
+```bash
+# Crear directorios para logs y datos
+mkdir -p ~/logs ~/data/postgres ~/data/kafka
+```
+
+### 📦 Transferencia del Proyecto
+
+#### Desde tu máquina local (macOS):
+
+```bash
+# 1. Crear tarball del proyecto (excluyendo archivos innecesarios)
+cd ~/ruta/a/tu/proyecto
+tar -czf bank-project.tar.gz \
+  --exclude='bank-microservices-cloud/target' \
+  --exclude='bank-microservices-cloud/*/target' \
+  --exclude='bank-microservices-cloud/.git' \
+  --exclude='bank-microservices-cloud/*.tar.gz' \
+  --exclude='bank-microservices-cloud/evidencias' \
+  --exclude='bank-microservices-cloud/*.pem' \
+  --exclude='bank-microservices-cloud/*.ppk' \
+  bank-microservices-cloud/
+
+# 2. Transferir a EC2
+scp -i backend3.pem bank-project.tar.gz ec2-user@<TU-IP-PUBLICA>:~/
+
+# 3. Conectarse a EC2 y desempaquetar
+ssh -i backend3.pem ec2-user@<TU-IP-PUBLICA>
+cd ~
+tar -xzf bank-project.tar.gz
+cd bank-microservices-cloud
+```
+
+### 🏗️ Compilación del Proyecto
+
+```bash
+# Dentro de EC2, en el directorio del proyecto
+
+# Compilar con Maven usando Java 21
+export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
+mvn clean package -DskipTests
+
+# Verificar que los JARs se generaron correctamente
+ls -lh */target/*.jar | grep -v '.original'
+```
+
+**Deberías ver 7 JARs generados**:
+
+- ✅ account-service-1.0.0.jar (~87MB)
+- ✅ api-gateway-bff-1.0.0.jar (~55MB)
+- ✅ batch-service-1.0.0.jar (~76MB)
+- ✅ config-server-1.0.0.jar (~43MB)
+- ✅ customer-service-1.0.0.jar (~99MB)
+- ✅ eureka-server-1.0.0.jar (~56MB)
+- ✅ transaction-service-1.0.0.jar (~99MB)
+
+### 🔒 Configuración de Security Groups
+
+**⚠️ PASO CRÍTICO**: Sin configurar los Security Groups, NO podrás acceder a los servicios desde internet.
+
+#### Opción A: AWS Console (Recomendado)
+
+1. Ve a **AWS Console** → **EC2** → **Instances**
+2. Selecciona tu instancia
+3. Tab **"Security"** → Click en el **Security Group**
+4. Click **"Edit inbound rules"**
+5. Agregar las siguientes reglas:
+
+| Puerto | Tipo       | Origen    | Descripción         |
+| ------ | ---------- | --------- | ------------------- |
+| 22     | SSH        | Mi IP     | SSH (seguro)        |
+| 8443   | Custom TCP | 0.0.0.0/0 | BFF/API Gateway     |
+| 8081   | Custom TCP | 0.0.0.0/0 | Account Service     |
+| 8082   | Custom TCP | 0.0.0.0/0 | Customer Service    |
+| 8083   | Custom TCP | 0.0.0.0/0 | Transaction Service |
+| 8084   | Custom TCP | 0.0.0.0/0 | Batch Service       |
+| 8761   | Custom TCP | 0.0.0.0/0 | Eureka Server       |
+| 8888   | Custom TCP | 0.0.0.0/0 | Config Server       |
+| 8090   | Custom TCP | 0.0.0.0/0 | Kafka UI            |
+| 5432   | Custom TCP | 0.0.0.0/0 | PostgreSQL          |
+| 9092   | Custom TCP | 0.0.0.0/0 | Kafka               |
+
+6. Click **"Save rules"**
+
+#### Opción B: Script Automático
+
+```bash
+# Ejecutar desde tu Mac (requiere AWS CLI configurado)
+cd bank-microservices-cloud
+chmod +x configure-security-groups.sh
+./configure-security-groups.sh
+```
+
+> 📝 **Nota**: Si el script falla por falta de credenciales AWS, usa la Opción A (manual).
+
+### 🚀 Iniciar los Servicios
+
+```bash
+# IMPORTANTE: Desconectar y reconectar SSH para aplicar grupo docker
+exit
+ssh -i backend3.pem ec2-user@<TU-IP-PUBLICA>
+
+# Navegar al proyecto
+cd ~/bank-microservices-cloud
+
+# Iniciar todos los servicios con Docker Compose
+docker-compose up -d
+
+# Verificar que todos los contenedores estén corriendo
+docker-compose ps
+```
+
+**Esperado**: 11 contenedores en estado **healthy**:
+
+- ✅ bank-config-server
+- ✅ bank-eureka-server
+- ✅ bank-postgres
+- ✅ bank-zookeeper
+- ✅ bank-kafka
+- ✅ bank-kafka-ui
+- ✅ bank-account-service
+- ✅ bank-customer-service
+- ✅ bank-transaction-service
+- ✅ bank-batch-service
+- ✅ bank-api-gateway-bff
+
+### ⏱️ Tiempos de Inicio
+
+Los servicios arrancan en el siguiente orden (espera ~5-7 minutos):
+
+1. **Config Server** (30 seg)
+2. **Eureka Server** (45 seg)
+3. **PostgreSQL** (15 seg)
+4. **Zookeeper + Kafka** (60 seg)
+5. **Microservicios** (90 seg cada uno)
+6. **API Gateway BFF** (último)
+
+```bash
+# Monitorear logs en tiempo real
+docker-compose logs -f
+
+# Ver logs de un servicio específico
+docker-compose logs -f customer-service
+
+# Verificar estado de salud cada 30 segundos
+watch -n 30 'docker-compose ps'
+```
+
+### ✅ Verificación del Despliegue
+
+#### 1. Verificar desde dentro de EC2
+
+```bash
+# Verificar API Gateway
+curl -k https://localhost:8443/actuator/health
+
+# Verificar Eureka (debe mostrar 5 servicios registrados)
+curl -s http://localhost:8761/eureka/apps | grep '<app>' | wc -l
+
+# Verificar Kafka UI
+curl -s http://localhost:8090 | grep -q "Kafka" && echo "OK"
+```
+
+#### 2. Verificar desde tu navegador
+
+**URLs Públicas** (reemplaza `<TU-IP-PUBLICA>` con tu IP de EC2):
+
+- **Eureka Dashboard**: `http://<TU-IP-PUBLICA>:8761`
+- **Kafka UI**: `http://<TU-IP-PUBLICA>:8090`
+- **Config Server**: `http://<TU-IP-PUBLICA>:8888/actuator/health`
+- **API Gateway**: `https://<TU-IP-PUBLICA>:8443/actuator/health`
+
+> ⚠️ **Certificado SSL**: El navegador mostrará advertencia porque el certificado es autofirmado. Click en "Avanzado" → "Continuar de todos modos".
+
+### 🧪 Ejecutar Test de Evaluación Final
+
+El script `test-evaluacion-final.sh` valida todas las funcionalidades del sistema:
+
+```bash
+# Transferir script desde tu Mac
+scp -i backend3.pem test-evaluacion-final.sh ec2-user@<TU-IP-PUBLICA>:~/bank-microservices-cloud/
+
+# Conectarse a EC2
+ssh -i backend3.pem ec2-user@<TU-IP-PUBLICA>
+
+# Navegar al proyecto
+cd ~/bank-microservices-cloud
+
+# Dar permisos de ejecución
+chmod +x test-evaluacion-final.sh
+
+# Ejecutar todas las pruebas automáticamente
+echo '8' | ./test-evaluacion-final.sh
+
+# O ejecutar de forma interactiva
+./test-evaluacion-final.sh
+```
+
+**Opciones del Test**:
+
+1. Parte 1: Migración de Procesos Batch (Spring Batch)
+2. Parte 2: Patrón Backend for Frontend (3 BFF)
+3. Parte 3: Microservicios Resilientes (Spring Cloud)
+4. Parte 4: Seguridad Distribuida (OAuth2/JWT)
+5. Parte 5: Mensajería Asíncrona (Kafka)
+6. Parte 6: Containerización (Docker)
+7. Resumen Ejecutivo Completo
+8. **Ejecutar TODAS las pruebas** (Demo completa) ⭐
+9. Ver estadísticas finales
+
+### 🔍 Comandos Útiles de Gestión
+
+```bash
+# Ver estado de contenedores
+docker-compose ps
+
+# Ver logs de todos los servicios
+docker-compose logs -f
+
+# Reiniciar un servicio específico
+docker-compose restart customer-service
+
+# Detener todos los servicios
+docker-compose down
+
+# Limpiar y reiniciar desde cero
+docker-compose down -v
+docker system prune -f
+docker-compose up -d --build
+
+# Ver uso de recursos
+docker stats
+
+# Verificar espacio en disco
+df -h
+
+# Verificar memoria
+free -h
+```
+
+### 🚨 Troubleshooting
+
+#### Problema: "Cannot connect to Docker daemon"
+
+```bash
+# Solución: Reiniciar Docker
+sudo systemctl restart docker
+sudo systemctl status docker
+```
+
+#### Problema: Contenedor no inicia (unhealthy)
+
+```bash
+# Ver logs detallados
+docker-compose logs -f NOMBRE_SERVICIO
+
+# Inspeccionar contenedor
+docker inspect NOMBRE_CONTENEDOR
+
+# Reiniciar el contenedor
+docker-compose restart NOMBRE_SERVICIO
+```
+
+#### Problema: Puerto ya en uso
+
+```bash
+# Ver qué proceso usa el puerto
+sudo netstat -tlnp | grep :8081
+
+# Matar el proceso
+sudo kill -9 <PID>
+```
+
+#### Problema: No hay memoria suficiente
+
+```bash
+# Crear archivo swap de 2GB
+sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# Verificar
+free -h
+```
+
+#### Problema: Eureka no muestra servicios
+
+```bash
+# Esperar 2-3 minutos más (los servicios tardan en registrarse)
+# Verificar logs de Eureka
+docker-compose logs -f eureka-server
+
+# Verificar logs del microservicio
+docker-compose logs -f customer-service
+```
+
+### 📊 Métricas de Despliegue
+
+**Recursos consumidos por la aplicación completa**:
+
+- **CPU**: ~30-40% en t2.large
+- **RAM**: ~4-5 GB de 8 GB disponibles
+- **Disco**: ~2 GB (imágenes Docker + JARs)
+- **Tiempo de inicio completo**: 5-7 minutos
+
+**Número de contenedores**: 11
+
+- 3 servicios de infraestructura (Config, Eureka, Postgres)
+- 3 servicios de mensajería (Zookeeper, Kafka, Kafka UI)
+- 4 microservicios de negocio
+- 1 API Gateway BFF
+
+### 📸 Evidencias para Evaluación
+
+Capturar pantallas de:
+
+1. **Eureka Dashboard** mostrando 5 servicios registrados
+2. **Kafka UI** mostrando topics y eventos
+3. **Docker PS** con 11 contenedores healthy
+4. **Logs** de microservicios funcionando
+5. **Postman/curl** ejecutando requests exitosamente
+6. **AWS Console** con Security Groups configurados
+7. **Test de evaluación final** completado con éxito
+
+### 🎯 Resumen del Proceso
+
+| Paso      | Acción                                      | Tiempo Estimado |
+| --------- | ------------------------------------------- | --------------- |
+| 1         | Preparar EC2 (instalar Docker, Java, Maven) | 10-15 min       |
+| 2         | Transferir proyecto                         | 2-3 min         |
+| 3         | Compilar con Maven                          | 3-5 min         |
+| 4         | Configurar Security Groups                  | 3-5 min         |
+| 5         | Iniciar servicios con Docker Compose        | 5-7 min         |
+| 6         | Verificar y probar                          | 5-10 min        |
+| **TOTAL** | **De proyecto local a producción**          | **30-45 min**   |
 
 ---
 

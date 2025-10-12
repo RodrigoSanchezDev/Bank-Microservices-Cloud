@@ -1,38 +1,36 @@
 {
 	"info": {
-		"_postman_id": "bank-microservices-cloud",
-		"name": "Bank Microservices Cloud API",
-		"description": "Colección de Postman para probar la API del sistema bancario con microservicios",
+		"_postman_id": "bank-microservices-collection-2025",
+		"name": "Banco XYZ - Microservicios Cloud",
+		"description": "Colección completa de pruebas para el sistema bancario con arquitectura de microservicios\n\n**Stack Tecnológico:**\n- Spring Boot 3.5.0\n- Spring Cloud 2024.0.0\n- Spring Batch\n- Apache Kafka\n- PostgreSQL 15\n- Docker\n\n**Autor:** Rodrigo Sánchez\n**Fecha:** Octubre 2025",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:8081",
-			"type": "string"
-		},
-		{
-			"key": "token",
-			"value": "",
-			"type": "string"
-		}
-	],
 	"item": [
 		{
-			"name": "Authentication",
+			"name": "1. Autenticación",
+			"description": "Endpoints de autenticación JWT centralizada en API Gateway",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Login - Obtener Token JWT",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('token', jsonData.token);",
-									"    console.log('Token guardado: ' + jsonData.token);",
-									"}"
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.exist;",
+									"    pm.environment.set(\"jwt_token\", jsonData.token);",
+									"});",
+									"",
+									"pm.test(\"Response has username\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.username).to.eql(\"admin\");",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -51,151 +49,1771 @@
 							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "auth", "login"]
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
 						},
-						"description": "Obtener token JWT para autenticación"
+						"description": "Endpoint público para obtener token JWT. No requiere autenticación previa."
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Accounts",
+			"name": "2. BFF - Backend For Frontend",
+			"description": "Rutas optimizadas por canal (Web, Móvil, ATM)",
 			"item": [
 				{
-					"name": "Get All Accounts",
+					"name": "BFF Web",
+					"item": [
+						{
+							"name": "Web Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/web/health",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"web",
+										"health"
+									]
+								},
+								"description": "Health check del canal web"
+							},
+							"response": []
+						},
+						{
+							"name": "Web Dashboard",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/web/dashboard?customerId=1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"web",
+										"dashboard"
+									],
+									"query": [
+										{
+											"key": "customerId",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Dashboard completo con cuentas, transacciones, tarjetas y analytics (respuesta 5KB)"
+							},
+							"response": []
+						},
+						{
+							"name": "Web Analytics - Spending",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/web/analytics/spending?customerId=1&days=30",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"web",
+										"analytics",
+										"spending"
+									],
+									"query": [
+										{
+											"key": "customerId",
+											"value": "1"
+										},
+										{
+											"key": "days",
+											"value": "30"
+										}
+									]
+								},
+								"description": "Analytics detallado con categorías, tendencias y recomendaciones"
+							},
+							"response": []
+						},
+						{
+							"name": "Web Account Detail",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/web/accounts/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"web",
+										"accounts",
+										"1"
+									]
+								},
+								"description": "Detalle completo de cuenta para web"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "BFF Móvil",
+					"item": [
+						{
+							"name": "Mobile Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/health",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"health"
+									]
+								},
+								"description": "Health check compacto para móvil"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Balance",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/balance/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"balance",
+										"1"
+									]
+								},
+								"description": "Consulta rápida de saldo (respuesta ultra-ligera)"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Accounts List",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/accounts",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"accounts"
+									]
+								},
+								"description": "Lista compacta de cuentas (solo datos esenciales)"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Account Detail",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/accounts/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"accounts",
+										"1"
+									]
+								},
+								"description": "Detalle ligero de cuenta para móvil"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Recent Transactions",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/transactions/recent?accountId=1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"transactions",
+										"recent"
+									],
+									"query": [
+										{
+											"key": "accountId",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Últimas transacciones (datos abreviados)"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Summary",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/mobile/summary?customerId=1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"summary"
+									],
+									"query": [
+										{
+											"key": "customerId",
+											"value": "1"
+										}
+									]
+								},
+								"description": "Resumen ultra-compacto para pantalla principal"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Transfer",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"amount\": 50000,\n  \"destinationAccount\": \"0000002\",\n  \"description\": \"Transferencia móvil\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/mobile/transfer",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"transfer"
+									]
+								},
+								"description": "Realizar transferencia desde app móvil"
+							},
+							"response": []
+						},
+						{
+							"name": "Mobile Pay Service",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"amount\": 25000,\n  \"service\": \"AGUA\",\n  \"reference\": \"123456789\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/mobile/pay",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"mobile",
+										"pay"
+									]
+								},
+								"description": "Pago de servicios desde app móvil"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "BFF ATM",
+					"item": [
+						{
+							"name": "ATM Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/atm/health",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"health"
+									]
+								},
+								"description": "Health check con capacidades y seguridad del ATM"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Balance Inquiry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"pin\": \"1234\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/balance",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"balance"
+									]
+								},
+								"description": "Consulta de saldo en cajero automático"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Withdraw",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"pin\": \"1234\",\n  \"amount\": 50000\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/withdraw",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"withdraw"
+									]
+								},
+								"description": "Retiro en cajero (límite $400,000, múltiplos de $10,000)"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Deposit",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"pin\": \"1234\",\n  \"amount\": 100000\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/deposit",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"deposit"
+									]
+								},
+								"description": "Depósito en cajero (límite $5,000,000)"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Mini Statement",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"pin\": \"1234\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/mini-statement",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"mini-statement"
+									]
+								},
+								"description": "Cartola rápida con últimas 5 transacciones"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Change PIN",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"currentPin\": \"1234\",\n  \"newPin\": \"5678\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/change-pin",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"change-pin"
+									]
+								},
+								"description": "Cambio de PIN en cajero automático"
+							},
+							"response": []
+						},
+						{
+							"name": "ATM Quick Transfer",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cardNumber\": \"************9012\",\n  \"pin\": \"1234\",\n  \"amount\": 30000,\n  \"destinationAccount\": \"0000002\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/atm/quick-transfer",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"atm",
+										"quick-transfer"
+									]
+								},
+								"description": "Transferencia rápida entre cuentas (límite $1,000,000)"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "3. Account Service - Legacy Data",
+			"description": "Microservicio de datos legacy migrados desde COBOL (Puerto 8081)",
+			"item": [
+				{
+					"name": "Get All Transactions",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{jwt_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/accounts",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "accounts"]
+							"raw": "{{base_url}}/api/accounts/legacy/transacciones",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"transacciones"
+							]
 						},
-						"description": "Obtener todas las cuentas bancarias"
+						"description": "Obtiene todas las transacciones legacy (1020 registros) con validación"
 					},
 					"response": []
 				},
 				{
-					"name": "Get Account by ID",
+					"name": "Get Transactions by Week",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{jwt_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/accounts/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "accounts", "1"]
+							"raw": "{{base_url}}/api/accounts/legacy/transacciones/semana/semana_1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"transacciones",
+								"semana",
+								"semana_1"
+							]
 						},
-						"description": "Obtener cuenta por ID"
+						"description": "Obtiene transacciones de una semana específica (semana_1, semana_2, semana_3)"
 					},
 					"response": []
 				},
 				{
-					"name": "Create Account",
+					"name": "Get Valid Transactions Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/transacciones/validas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"transacciones",
+								"validas"
+							]
+						},
+						"description": "Solo transacciones que pasaron la validación"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invalid Transactions (Admin Only)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/transacciones/invalidas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"transacciones",
+								"invalidas"
+							]
+						},
+						"description": "Transacciones que fallaron la validación (solo Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Annual Accounts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/cuentas-anuales",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"cuentas-anuales"
+							]
+						},
+						"description": "Obtiene todas las cuentas anuales desde sistema legacy"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Annual Accounts by Week",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/cuentas-anuales/semana/semana_1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"cuentas-anuales",
+								"semana",
+								"semana_1"
+							]
+						},
+						"description": "Obtiene cuentas anuales de una semana específica (semana_1, semana_2, semana_3)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Valid Annual Accounts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/cuentas-anuales/validas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"cuentas-anuales",
+								"validas"
+							]
+						},
+						"description": "Obtiene solo las cuentas anuales que pasaron la validación"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Interest Records",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/intereses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"intereses"
+							]
+						},
+						"description": "Obtiene todos los registros de intereses"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Interest by Week",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/intereses/semana/semana_1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"intereses",
+								"semana",
+								"semana_1"
+							]
+						},
+						"description": "Obtiene intereses de una semana específica (semana_1, semana_2, semana_3)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Valid Interest Records",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/intereses/validas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"intereses",
+								"validas"
+							]
+						},
+						"description": "Obtiene solo los intereses que pasaron la validación"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Migration Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/legacy/resumen",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"legacy",
+								"resumen"
+							]
+						},
+						"description": "Resumen completo de la migración con estadísticas (solo Admin)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Customer Service",
+			"description": "Microservicio de gestión de clientes (Puerto 8082)",
+			"item": [
+				{
+					"name": "Get All Customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer by RUT",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/rut/12345678-9",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"rut",
+								"12345678-9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer by Email",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/email/admin@bancoxyz.cl",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"email",
+								"admin@bancoxyz.cl"
+							]
+						},
+						"description": "⚠️ Si da 404, primero ejecuta 'Get All Customers' para ver qué emails existen en la base de datos, o ejecuta 'Create Customer' primero."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Customer (Genera Evento Kafka)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Customer created and Kafka event published\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.rut).to.exist;",
+									"    pm.environment.set(\"created_customer_id\", jsonData.id);",
+									"    console.log(\"🔔 Evento CustomerCreated publicado a Kafka topic: customer-created-events\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
 							{
-								"key": "Content-Type",
-								"value": "application/json"
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
 							},
 							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"accountNumber\": \"1234567890\",\n  \"accountHolder\": \"Juan Pérez\",\n  \"balance\": 1000.00,\n  \"accountType\": \"SAVINGS\"\n}"
+							"raw": "{\n  \"rut\": \"{{$timestamp}}-K\",\n  \"firstName\": \"Kafka\",\n  \"lastName\": \"Test\",\n  \"email\": \"kafka.test{{$timestamp}}@bancoxyz.cl\",\n  \"phone\": \"+56912345678\",\n  \"address\": \"Av. Kafka 123, Santiago\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/accounts",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "accounts"]
+							"raw": "{{base_url}}/api/customers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
 						},
-						"description": "Crear nueva cuenta bancaria"
+						"description": "Al crear un cliente, se publica automáticamente un evento CustomerCreated al topic de Kafka 'customer-created-events'"
 					},
 					"response": []
 				},
 				{
-					"name": "Update Account",
+					"name": "Update Customer",
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
-								"key": "Content-Type",
-								"value": "application/json"
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
 							},
 							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"accountNumber\": \"1234567890\",\n  \"accountHolder\": \"Juan Pérez Actualizado\",\n  \"balance\": 1500.00,\n  \"accountType\": \"CHECKING\"\n}"
+							"raw": "{\n  \"rut\": \"12345678-9\",\n  \"firstName\": \"Juan Actualizado\",\n  \"lastName\": \"Pérez González\",\n  \"email\": \"juan.perez.updated@example.com\",\n  \"phone\": \"+56987654321\",\n  \"address\": \"Calle Nueva 456, Santiago\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/accounts/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "accounts", "1"]
-						},
-						"description": "Actualizar cuenta existente"
+							"raw": "{{base_url}}/api/customers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "Delete Account",
+					"name": "Delete Customer",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{jwt_token}}"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/accounts/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "accounts", "1"]
+							"raw": "{{base_url}}/api/customers/{{created_customer_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"{{created_customer_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Service Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/customers/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"health"
+							]
 						},
-						"description": "Eliminar cuenta (soft delete)"
+						"description": "Health check del Customer Service"
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Health & Monitoring",
+			"name": "5. Transaction Service",
+			"description": "Microservicio de procesamiento de transacciones (Puerto 8083)",
 			"item": [
 				{
-					"name": "Health Check",
+					"name": "Get All Transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/{{created_transaction_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"{{created_transaction_id}}"
+							]
+						},
+						"description": "⚠️ Asegúrate de ejecutar primero 'Create Transaction - Deposit' para generar la variable {{created_transaction_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions by Account",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/account/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"account",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions by Customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/customer/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"customer",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction - Deposit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Transaction created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.type).to.eql('DEPOSIT');",
+									"    pm.environment.set(\"created_transaction_id\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": 1,\n  \"customerId\": 1,\n  \"type\": \"DEPOSIT\",\n  \"amount\": 10000.00,\n  \"description\": \"Depósito de prueba Postman\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction - Withdrawal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": 1,\n  \"customerId\": 1,\n  \"type\": \"WITHDRAWAL\",\n  \"amount\": 5000.00,\n  \"description\": \"Retiro cajero automático\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction - Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": 1,\n  \"customerId\": 1,\n  \"type\": \"TRANSFER\",\n  \"amount\": 15000.00,\n  \"description\": \"Transferencia a cuenta 2\",\n  \"destinationAccountId\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction - Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": 1,\n  \"customerId\": 1,\n  \"type\": \"PAYMENT\",\n  \"amount\": 25000.00,\n  \"description\": \"Pago de servicios\",\n  \"reference\": \"AGUA-123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transaction",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountId\": 1,\n  \"customerId\": 1,\n  \"type\": \"PAYMENT\",\n  \"amount\": 30000.00,\n  \"status\": \"COMPLETED\",\n  \"description\": \"Pago actualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions/{{created_transaction_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"{{created_transaction_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Transaction",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/{{created_transaction_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"{{created_transaction_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Transaction Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"health"
+							]
+						},
+						"description": "Health check del Transaction Service"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Batch Service",
+			"description": "Microservicio de procesos por lotes con Spring Batch (Puerto 8084)",
+			"item": [
+				{
+					"name": "Get Jobs Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/batch/jobs/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"batch",
+								"jobs",
+								"status"
+							]
+						},
+						"description": "Obtiene el estado del servicio batch y los jobs disponibles"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Job - Transacciones Diarias",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Job started successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has job execution details\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('job');",
+									"    pm.expect(jsonData.status).to.eql('SUCCESS');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/batch/jobs/transacciones",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"batch",
+								"jobs",
+								"transacciones"
+							]
+						},
+						"description": "Ejecuta job de procesamiento de transacciones diarias"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Job - Intereses Mensuales",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/batch/jobs/intereses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"batch",
+								"jobs",
+								"intereses"
+							]
+						},
+						"description": "Ejecuta job de cálculo de intereses mensuales"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Job - Estados de Cuenta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/batch/jobs/estados-cuenta",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"batch",
+								"jobs",
+								"estados-cuenta"
+							]
+						},
+						"description": "Ejecuta job de generación de estados de cuenta anuales"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7. Health Checks",
+			"description": "Endpoints de verificación de salud (Spring Actuator)",
+			"item": [
+				{
+					"name": "Config Server Health",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/actuator/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["actuator", "health"]
+							"raw": "http://localhost:8888/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eureka Server Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8761/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8761",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "API Gateway BFF Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/actuator/health",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Account Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8082/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Transaction Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Batch Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8084/actuator/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8084",
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "8. Resiliencia - Circuit Breaker",
+			"description": "Tests de patrones de resiliencia (Resilience4j)",
+			"item": [
+				{
+					"name": "Test Circuit Breaker - Normal",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/accounts/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"accounts",
+								"1"
+							]
 						},
-						"description": "Verificar estado del servicio"
+						"description": "Request normal - Circuit Breaker en estado CLOSED"
 					},
 					"response": []
 				},
@@ -205,29 +1823,75 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/actuator/health/circuitbreakers",
-							"host": ["{{baseUrl}}"],
-							"path": ["actuator", "health", "circuitbreakers"]
+							"raw": "http://localhost:8081/actuator/health/circuitbreakers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"actuator",
+								"health",
+								"circuitbreakers"
+							]
 						},
-						"description": "Ver estado del Circuit Breaker"
-					},
-					"response": []
-				},
-				{
-					"name": "Metrics",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/actuator/metrics",
-							"host": ["{{baseUrl}}"],
-							"path": ["actuator", "metrics"]
-						},
-						"description": "Ver métricas del servicio"
+						"description": "Verifica estado del Circuit Breaker (CLOSED, OPEN, HALF_OPEN)"
 					},
 					"response": []
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://localhost:8443",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "created_customer_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "created_account_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "created_transaction_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "batch_execution_id",
+			"value": "",
+			"type": "string"
 		}
 	]
 }

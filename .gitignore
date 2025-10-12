@@ -67,3 +67,19 @@ logs/
 ### Application ###
 application-local.yml
 application-local.properties
+
+### AWS & SSH Keys ###
+*.pem
+*.ppk
+*.key
+*.pub
+backend3.pem
+backend3.ppk
+
+### Generated files ###
+*.tar.gz
+bank-project.tar.gz
+
+### EC2 Setup Scripts ###
+configure-security-groups.sh
+setup-ec2.sh
