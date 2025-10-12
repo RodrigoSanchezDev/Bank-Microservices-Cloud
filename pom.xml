@@ -27,6 +27,7 @@
         <module>account-service</module>
         <module>customer-service</module>
         <module>transaction-service</module>
+        <module>batch-service</module>
     </modules>
 
     <properties>

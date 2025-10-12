@@ -84,6 +84,26 @@ spring:
                   firstBackoff: 50ms
                   maxBackoff: 500ms
 
+        # Batch Service Routes (Admin only - requires JWT)
+        - id: batch-service-route
+          uri: lb://batch-service
+          predicates:
+            - Path=/api/batch/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: batchServiceCircuitBreaker
+                fallbackUri: forward:/fallback/batch
+            - RemoveRequestHeader=Cookie
+            - name: Retry
+              args:
+                retries: 2
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1000ms
+
       globalcors:
         cors-configurations:
           "[/**]":

@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
       - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     networks:
       - bank-network
@@ -268,6 +269,43 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  # Batch Service (Spring Batch - Procesamiento de archivos CSV legacy)
+  batch-service:
+    build:
+      context: ./batch-service
+      dockerfile: Dockerfile
+    container_name: bank-batch-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    # Puerto 8084 NO expuesto - Solo accesible vía BFF HTTPS (8443)
+    # Acceso: https://localhost:8443/api/batch/** (requiere JWT)
+    # ports:
+    #   - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/batchdb
+      SPRING_DATASOURCE_USERNAME: bank
+      SPRING_DATASOURCE_PASSWORD: bankpass123
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_COMPATIBILITY_VERIFIER_ENABLED: "false"
+    networks:
+      - bank-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
 networks:
   bank-network:

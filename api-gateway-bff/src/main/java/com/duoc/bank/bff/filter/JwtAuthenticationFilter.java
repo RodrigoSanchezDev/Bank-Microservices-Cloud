@@ -1,6 +1,5 @@
 package com.duoc.bank.bff.filter;
 
-import com.duoc.bank.bff.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -10,6 +9,9 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.duoc.bank.bff.security.JwtTokenUtil;
+
 import reactor.core.publisher.Mono;
 
 /**

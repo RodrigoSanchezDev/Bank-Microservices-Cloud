@@ -1,0 +1,126 @@
+#!/bin/bash
+set -e
+
+# Script de inicialización AUTOMÁTICA de bases de datos PostgreSQL
+# Se ejecuta UNA SOLA VEZ cuando se crea el contenedor por primera vez
+# NO requiere intervención manual - 100% automatizado
+
+echo "🚀 Iniciando creación de bases de datos..."
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Crear base de datos para Account Service
+    SELECT 'CREATE DATABASE accountdb'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'accountdb')\gexec
+
+    -- Crear base de datos para Customer Service
+    SELECT 'CREATE DATABASE customerdb'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'customerdb')\gexec
+
+    -- Crear base de dato para Transaction Service
+    SELECT 'CREATE DATABASE transactiondb'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'transactiondb')\gexec
+
+    -- Crear base de datos para Batch Service (Spring Batch)
+    SELECT 'CREATE DATABASE batchdb'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'batchdb')\gexec
+
+    -- Otorgar todos los privilegios al usuario 'bank'
+    GRANT ALL PRIVILEGES ON DATABASE accountdb TO bank;
+    GRANT ALL PRIVILEGES ON DATABASE customerdb TO bank;
+    GRANT ALL PRIVILEGES ON DATABASE transactiondb TO bank;
+    GRANT ALL PRIVILEGES ON DATABASE batchdb TO bank;
+EOSQL
+
+echo "✅ Bases de datos creadas: accountdb, customerdb, transactiondb, batchdb"
+
+# Inicializar schema de Spring Batch en batchdb
+echo "� Creando tablas de Spring Batch en batchdb..."
+
+psql -v ON_ERROR_STOP=1 --username "bank" --dbname "batchdb" <<-'EOSQL'
+-- Schema oficial de Spring Batch 5.x para PostgreSQL
+-- Fuente: https://github.com/spring-projects/spring-batch/blob/main/spring-batch-core/src/main/resources/org/springframework/batch/core/schema-postgresql.sql
+
+CREATE TABLE BATCH_JOB_INSTANCE  (
+	JOB_INSTANCE_ID BIGINT  NOT NULL PRIMARY KEY ,
+	VERSION BIGINT ,
+	JOB_NAME VARCHAR(100) NOT NULL,
+	JOB_KEY VARCHAR(32) NOT NULL,
+	constraint JOB_INST_UN unique (JOB_NAME, JOB_KEY)
+) ;
+
+CREATE TABLE BATCH_JOB_EXECUTION  (
+	JOB_EXECUTION_ID BIGINT  NOT NULL PRIMARY KEY ,
+	VERSION BIGINT  ,
+	JOB_INSTANCE_ID BIGINT NOT NULL,
+	CREATE_TIME TIMESTAMP NOT NULL,
+	START_TIME TIMESTAMP DEFAULT NULL ,
+	END_TIME TIMESTAMP DEFAULT NULL ,
+	STATUS VARCHAR(10) ,
+	EXIT_CODE VARCHAR(2500) ,
+	EXIT_MESSAGE VARCHAR(2500) ,
+	LAST_UPDATED TIMESTAMP,
+	constraint JOB_INST_EXEC_FK foreign key (JOB_INSTANCE_ID)
+	references BATCH_JOB_INSTANCE(JOB_INSTANCE_ID)
+) ;
+
+CREATE TABLE BATCH_JOB_EXECUTION_PARAMS  (
+	JOB_EXECUTION_ID BIGINT NOT NULL ,
+	PARAMETER_NAME VARCHAR(100) NOT NULL ,
+	PARAMETER_TYPE VARCHAR(100) NOT NULL ,
+	PARAMETER_VALUE VARCHAR(2500) ,
+	IDENTIFYING CHAR(1) NOT NULL ,
+	constraint JOB_EXEC_PARAMS_FK foreign key (JOB_EXECUTION_ID)
+	references BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
+) ;
+
+CREATE TABLE BATCH_STEP_EXECUTION  (
+	STEP_EXECUTION_ID BIGINT  NOT NULL PRIMARY KEY ,
+	VERSION BIGINT NOT NULL,
+	STEP_NAME VARCHAR(100) NOT NULL,
+	JOB_EXECUTION_ID BIGINT NOT NULL,
+	CREATE_TIME TIMESTAMP NOT NULL,
+	START_TIME TIMESTAMP DEFAULT NULL ,
+	END_TIME TIMESTAMP DEFAULT NULL ,
+	STATUS VARCHAR(10) ,
+	COMMIT_COUNT BIGINT ,
+	READ_COUNT BIGINT ,
+	FILTER_COUNT BIGINT ,
+	WRITE_COUNT BIGINT ,
+	READ_SKIP_COUNT BIGINT ,
+	WRITE_SKIP_COUNT BIGINT ,
+	PROCESS_SKIP_COUNT BIGINT ,
+	ROLLBACK_COUNT BIGINT ,
+	EXIT_CODE VARCHAR(2500) ,
+	EXIT_MESSAGE VARCHAR(2500) ,
+	LAST_UPDATED TIMESTAMP,
+	constraint JOB_EXEC_STEP_FK foreign key (JOB_EXECUTION_ID)
+	references BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
+) ;
+
+CREATE TABLE BATCH_STEP_EXECUTION_CONTEXT  (
+	STEP_EXECUTION_ID BIGINT NOT NULL PRIMARY KEY,
+	SHORT_CONTEXT VARCHAR(2500) NOT NULL,
+	SERIALIZED_CONTEXT TEXT ,
+	constraint STEP_EXEC_CTX_FK foreign key (STEP_EXECUTION_ID)
+	references BATCH_STEP_EXECUTION(STEP_EXECUTION_ID)
+) ;
+
+CREATE TABLE BATCH_JOB_EXECUTION_CONTEXT  (
+	JOB_EXECUTION_ID BIGINT NOT NULL PRIMARY KEY,
+	SHORT_CONTEXT VARCHAR(2500) NOT NULL,
+	SERIALIZED_CONTEXT TEXT ,
+	constraint JOB_EXEC_CTX_FK foreign key (JOB_EXECUTION_ID)
+	references BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
+) ;
+
+CREATE SEQUENCE BATCH_STEP_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
+CREATE SEQUENCE BATCH_JOB_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
+CREATE SEQUENCE BATCH_JOB_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
+EOSQL
+
+echo "✅ Schema de Spring Batch creado correctamente en batchdb"
+echo "📊 Tablas: BATCH_JOB_INSTANCE, BATCH_JOB_EXECUTION, BATCH_JOB_EXECUTION_PARAMS,"
+echo "           BATCH_STEP_EXECUTION, BATCH_STEP_EXECUTION_CONTEXT, BATCH_JOB_EXECUTION_CONTEXT"
+echo "📈 Secuencias: BATCH_JOB_SEQ, BATCH_JOB_EXECUTION_SEQ, BATCH_STEP_EXECUTION_SEQ"
+echo ""
+echo "🎉 Inicialización completada - Sistema 100% automatizado"

@@ -523,7 +523,7 @@ _6 imágenes Docker optimizadas con Alpine Linux (180-653 MB cada una)_
 
 ![Evidencia 6: docker-compose.yml](evidencias/evidencia_6_docker_compose.png)
 
-_Orquestación de 10 contenedores con dependencias y health checks_
+_Orquestación de 11 contenedores con dependencias y health checks_
 
 **Servicios configurados**:
 
@@ -537,11 +537,11 @@ _Orquestación de 10 contenedores con dependencias y health checks_
 
 ![Evidencia 7: Docker Containers Running](evidencias/evidencia_7_containers_running.png)
 
-_10 contenedores corriendo exitosamente, 9 con estado healthy_
+_11 contenedores corriendo exitosamente, 10 con estado healthy_
 
 **Estado de contenedores**:
 
-- ✅ 9 contenedores **healthy** (con health checks configurados)
+- ✅ 10 contenedores **healthy** (con health checks configurados)
 - ⚠️ 1 contenedor **running** (api-gateway-bff - reactive gateway)
 - ✅ Todos los puertos mapeados correctamente
 - ✅ Red `bank-network` funcionando
@@ -552,7 +552,7 @@ _10 contenedores corriendo exitosamente, 9 con estado healthy_
 
 ![Evidencia 8: Eureka Server](evidencias/evidencia_8_eureka_dashboard.png)
 
-_Dashboard de Eureka mostrando los 4 microservicios registrados dinámicamente_
+_Dashboard de Eureka mostrando los 5 microservicios registrados dinámicamente_
 
 **Microservicios registrados**:
 
@@ -560,6 +560,7 @@ _Dashboard de Eureka mostrando los 4 microservicios registrados dinámicamente_
 - ✅ **ACCOUNT-SERVICE** (puerto 8081) - Gestión de cuentas
 - ✅ **CUSTOMER-SERVICE** (puerto 8082) - Gestión de clientes
 - ✅ **TRANSACTION-SERVICE** (puerto 8083) - Gestión de transacciones
+- ✅ **BATCH-SERVICE** (puerto 8084) - Procesamiento por lotes
 
 ---
 
@@ -680,13 +681,14 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 - ✅ **Autenticación JWT Centralizada** en API Gateway (sin Spring Security)
 - ✅ **Event-Driven Architecture** con Apache Kafka
 - ✅ **Kafka UI** para visualización de eventos en tiempo real (puerto 8090)
-- ✅ **3 Microservicios de Negocio** (Account, Customer, Transaction)
+- ✅ **4 Microservicios de Negocio** (Account, Customer, Transaction, Batch)
 - ✅ **27 Endpoints Funcionales** (11 Account + 8 Customer + 8 Transaction)
+- ✅ **Spring Batch** para procesamiento de datos legacy y jobs programados
 - ✅ **Mensajería Asíncrona** (Producer/Consumer con Spring Kafka)
 - ✅ **Configuración Centralizada** con Spring Cloud Config
 - ✅ **Service Discovery** con Netflix Eureka
 - ✅ **Patrones de Resiliencia** (Circuit Breaker, Retry, Rate Limiting)
-- ✅ **Contenedorización** con Docker y Docker Compose (10 contenedores)
+- ✅ **Contenedorización** con Docker y Docker Compose (11 contenedores)
 - ✅ **API RESTful** documentada con Swagger/OpenAPI
 - ✅ **Monitoreo** con Spring Actuator
 - ✅ **Bases de Datos Independientes** por microservicio
@@ -711,33 +713,33 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 │   (8888)     │                          │    (8761)       │
 └──────────────┘                          └────────┬────────┘
                                                    │
-                        ┌──────────────────────────┼──────────────┐
-                        │                          │              │
-                 ┌──────▼──────┐         ┌────────▼──────┐ ┌────▼────────┐
-                 │   Account   │         │   Customer    │ │Transaction  │
-                 │   Service   │         │    Service    │ │   Service   │
-                 │   (8081)    │         │    (8082)     │ │   (8083)    │
-                 └──────┬──────┘         └───────┬───────┘ └─────┬───────┘
-                        │                        │               │
-                        │                        │ Kafka         │ Kafka
-                        │                        │ Producer      │ Consumer
-                        │                        │               │
-                        │                 ┌──────▼───────────────▼──────┐
-                        │                 │    Apache Kafka (9092)      │
-                        │                 │  customer-created-events    │
-                        │                 └──────┬─────────┬────────────┘
-                        │                        │         │
-                        │                 ┌──────▼──┐  ┌───▼────────┐
-                        │                 │Zookeeper│  │  Kafka UI  │
-                        │                 │ (2181)  │  │   (8090)   │
-                        │                 └─────────┘  └────────────┘
-                        │
-                        └────────────────────────┼───────────────┘
+                        ┌──────────────────────────┼──────────────────────┐
+                        │                          │                      │
+                 ┌──────▼──────┐         ┌────────▼──────┐ ┌────▼────────┐ ┌─────▼──────┐
+                 │   Account   │         │   Customer    │ │Transaction  │ │   Batch    │
+                 │   Service   │         │    Service    │ │   Service   │ │  Service   │
+                 │   (8081)    │         │    (8082)     │ │   (8083)    │ │  (8084)    │
+                 └──────┬──────┘         └───────┬───────┘ └─────┬───────┘ └────┬───────┘
+                        │                        │               │              │
+                        │                        │ Kafka         │ Kafka        │ Spring
+                        │                        │ Producer      │ Consumer     │ Batch
+                        │                        │               │              │ Jobs
+                        │                 ┌──────▼───────────────▼──────────────▼──┐
+                        │                 │       Apache Kafka (9092)              │
+                        │                 │     customer-created-events            │
+                        │                 └──────┬─────────┬────────────┬──────────┘
+                        │                        │         │            │
+                        │                 ┌──────▼──┐  ┌───▼────────┐   │
+                        │                 │Zookeeper│  │  Kafka UI  │   │
+                        │                 │ (2181)  │  │   (8090)   │   │
+                        │                 └─────────┘  └────────────┘   │
+                        │                                                │
+                        └────────────────────────┼───────────────────────┘
                                                  │
                                           ┌──────▼──────┐
                                           │ PostgreSQL  │
                                           │   (5432)    │
-                                          │  3 Databases│
+                                          │  4 Databases│
                                           └─────────────┘
 ```
 
@@ -849,6 +851,84 @@ Plataforma empresarial de microservicios para gestión bancaria que implementa p
 - Retry (reintentos automáticos con backoff exponencial)
 - Rate Limiter (control de tráfico: 10 req/s)
 - Time Limiter (timeout de 3 segundos)
+
+### Batch Service (Puerto 8084)
+
+**Microservicio de procesamiento por lotes con Spring Batch**
+
+**Características**:
+
+- Migración de procesos COBOL legacy a Spring Batch
+- Procesamiento masivo de transacciones bancarias
+- Jobs configurables con steps y chunks
+- Validación automática de datos
+- Manejo de errores y reintentos
+- Reportes de ejecución y métricas
+
+**Procesos Batch Implementados**:
+
+1. **Validación de Transacciones Legacy** (`validateTransactionsJob`)
+
+   - Lee transacciones desde archivo CSV legacy
+   - Valida formato y reglas de negocio
+   - Genera reporte de transacciones inválidas
+   - Chunk size: 100 registros
+
+2. **Carga de Cuentas Legacy** (`loadLegacyAccountsJob`)
+
+   - Importa cuentas desde sistema COBOL
+   - Normaliza formatos de datos
+   - Valida integridad referencial
+   - Chunk size: 50 registros
+
+3. **Cálculo de Intereses Mensuales** (`calculateInterestsJob`)
+   - Procesa todas las cuentas activas
+   - Aplica tasas según tipo de cuenta
+   - Genera movimientos de interés
+   - Ejecución programada: Último día del mes
+
+**Endpoints REST**:
+
+- `POST /batch/jobs/{jobName}` - Ejecutar job manualmente
+- `GET /batch/jobs` - Listar todos los jobs
+- `GET /batch/jobs/{jobName}/executions` - Historial de ejecuciones
+- `GET /batch/jobs/executions/{executionId}` - Detalle de ejecución
+
+**Características Spring Batch**:
+
+- JobRepository para tracking de ejecuciones
+- ItemReader/ItemProcessor/ItemWriter pattern
+- Skip logic para errores no críticos
+- Restart capability para jobs fallidos
+- Listeners para logging y métricas
+
+**Ejemplo de Ejecución**:
+
+```bash
+# Ejecutar job de validación
+curl -X POST http://localhost:8084/batch/jobs/validateTransactionsJob
+
+# Ver resultado
+{
+  "jobId": 1,
+  "jobName": "validateTransactionsJob",
+  "status": "COMPLETED",
+  "startTime": "2025-10-11T10:00:00",
+  "endTime": "2025-10-11T10:05:30",
+  "exitCode": "COMPLETED",
+  "itemsRead": 1020,
+  "itemsProcessed": 1015,
+  "itemsWritten": 1015,
+  "skipCount": 5
+}
+```
+
+**Migración Legacy**:
+
+- ✅ Reemplaza scripts COBOL batch nocturnos
+- ✅ Procesamiento paralelo con partitioning
+- ✅ Monitoreo en tiempo real vs. logs offline
+- ✅ Rollback automático ante fallos
 
 ### Apache Kafka (Puertos 9092/29092)
 
@@ -1536,16 +1616,41 @@ cancelRunningFuture: true
 
 ## 🧪 Testing y Calidad
 
+### Suite de Tests Automatizados
+
 ```bash
-# Ejecutar tests
+# Ejecutar tests unitarios
 mvn clean test
 
-# Tests de un módulo
+# Tests de un módulo específico
 cd account-service && mvn test
 
 # Reporte de cobertura
 mvn clean test jacoco:report
 ```
+
+### Script de Evaluación Completa (Alternativa)
+
+Para una **verificación integral del sistema** con interfaz interactiva:
+
+```bash
+# Dar permisos de ejecución
+chmod +x test-evaluacion-final.sh
+
+# Ejecutar menú interactivo
+./test-evaluacion-final.sh
+```
+
+**Incluye 22 tests organizados en 6 categorías**:
+
+- ✅ Migración de Procesos Batch (4 tests)
+- ✅ Patrón BFF Multi-Canal (5 tests)
+- ✅ Microservicios Resilientes (3 tests)
+- ✅ Seguridad Distribuida JWT/HTTPS (3 tests)
+- ✅ Mensajería Asíncrona Kafka (3 tests)
+- ✅ Containerización Docker (4 tests)
+
+Ver [GUIA-RAPIDA-USO.md](GUIA-RAPIDA-USO.md) para más detalles.
 
 ### Colección Postman
 

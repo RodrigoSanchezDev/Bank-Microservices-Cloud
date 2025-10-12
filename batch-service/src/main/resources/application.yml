@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: batch-service
+
+  cloud:
+    config:
+      enabled: false
+    compatibility-verifier:
+      enabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batchdb
+    username: bank
+    password: bankpass123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  batch:
+    jdbc:
+      initialize-schema: always # Auto-crea tablas y secuencias
+    job:
+      enabled: false # Deshabilita ejecución automática al iniciar
+
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+
+# Server
+server:
+  port: 8084
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,batch
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    com.duoc.bank.batch: INFO
+    org.springframework.batch: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
